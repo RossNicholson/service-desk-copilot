@@ -277,10 +277,10 @@ class Planner:
         fills = self._fills(client, caller, issue)
 
         scope = rng.choice(issue.scopes)
-        urgency = rng.choices([1, 2, 3], weights=[2, 5, 4])[0]
+        urgency = rng.choices([1, 2, 3], weights=[3, 6, 3])[0]
         if issue.id in ("new-starter", "leaver", "software-install"):
             urgency = rng.choice([2, 3])
-        stated_urgency = rng.random() < 0.75
+        stated_urgency = rng.random() < 0.85
         if not stated_urgency:
             urgency = 3  # nothing in the email suggests urgency
         options = pools.URGENCY_STATEMENTS[urgency]

@@ -196,7 +196,7 @@ SECONDARY_LEADS = [
 ]
 
 FORWARD_NOTES = [
-    "Hi team, please see below from {caller_first}. Can someone help?",
+    "Please see below from {caller_first}. Can someone help?",
     "Forwarding on behalf of {caller_first}, they can't get through to you.",
     "Please can you pick this up for {caller_first}?",
     "See below. Thanks.",
