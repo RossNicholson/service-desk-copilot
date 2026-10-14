@@ -6,7 +6,15 @@
 const PREVIEW = typeof window.PREVIEW_DATA !== "undefined";
 let DATA = null;
 let SETTINGS = null;
-const state = { priority: "all", query: "", alertKind: "all" };
+const state = { priority: "all", query: "", alertKind: "all", assignee: remembered("assignee") || "all" };
+
+// Per-viewer conveniences only; the page works the same without storage.
+function remembered(key) {
+  try { return localStorage.getItem(`copilot.${key}`); } catch { return null; }
+}
+function remember(key, value) {
+  try { localStorage.setItem(`copilot.${key}`, value); } catch { /* storage blocked */ }
+}
 
 // ---------------------------------------------------------------------------
 // Backend: the API, or the embedded preview data with changes kept in memory
@@ -273,25 +281,32 @@ function tickets() {
   const q = state.query.toLowerCase();
   const rows = DATA.tickets
     .filter((t) => state.priority === "all" || priorityOf(t) === state.priority)
+    .filter((t) => state.assignee === "all" || (state.assignee === "none" ? !t.assignee : t.assignee === state.assignee))
     .filter((t) => !q || [t.subject, t.caller?.name, t.fields.client_company?.value, t.number].join(" ").toLowerCase().includes(q))
     .slice()
     .sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
   const chip = (p, label) => `<button class="chip" data-priority="${p}" aria-pressed="${state.priority === p}">${label}</button>`;
+  const people = [...new Set(DATA.tickets.map((t) => t.assignee).filter(Boolean))].sort();
   return `
-  <div class="chips">${chip("all", "All")}${["P1", "P2", "P3", "P4", "P5"].map((p) => chip(p, p)).join("")}</div>
+  <div class="chips">${chip("all", "All")}${["P1", "P2", "P3", "P4", "P5"].map((p) => chip(p, p)).join("")}
+    <label for="assignee" class="sr-only">Assigned to</label>
+    <select id="assignee" aria-label="Assigned to">
+      <option value="all">Everyone's tickets</option><option value="none" ${state.assignee === "none" ? "selected" : ""}>Not picked up</option>
+      ${people.map((p) => `<option ${state.assignee === p ? "selected" : ""}>${esc(p)}</option>`).join("")}
+    </select></div>
   <section class="card">
     <div class="card-head"><h2>${rows.length} tickets</h2><span class="hint">Newest activity first</span></div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Ticket</th><th>Subject</th><th>Caller</th><th>Priority</th><th>Assignment group</th><th>AI</th><th>Updated</th></tr></thead>
+    <div class="table-wrap cards"><table>
+      <thead><tr><th>Ticket</th><th>Subject</th><th>Caller</th><th>Priority</th><th>Team and engineer</th><th>AI</th><th>Updated</th></tr></thead>
       <tbody>${rows.map((t) => `
         <tr data-ticket="${t.id}">
-          <td class="ref">#${t.number}</td>
-          <td><div class="subject">${esc(t.subject)}</div><small class="muted">${esc(t.fields.client_company?.value || "Unknown client")}</small></td>
-          <td><div class="who"><span class="avatar">${initials(t.caller?.name)}</span><span>${esc(t.caller?.name || "Unknown")}<small>${esc(t.caller?.role || "")}</small></span></div></td>
-          <td>${pill(priorityOf(t))}</td>
-          <td>${esc(t.fields.assignment_group?.value || "")}</td>
-          <td>${statusPills(t)}</td>
-          <td class="muted">${ago(t.updated_at, now)} ago</td>
+          <td class="ref" data-label="Ticket">#${t.number}</td>
+          <td data-label="Subject"><div class="subject">${esc(t.subject)}</div><small class="muted">${esc(t.fields.client_company?.value || "Unknown client")}</small></td>
+          <td data-label="Caller"><div class="who"><span class="avatar">${initials(t.caller?.name)}</span><span>${esc(t.caller?.name || "Unknown")}<small>${esc(t.caller?.role || "")}</small></span></div></td>
+          <td data-label="Priority">${pill(priorityOf(t))}</td>
+          <td data-label="Assignment group">${esc(t.fields.assignment_group?.value || "")}${t.assignee ? ` · ${esc(t.assignee)}` : ""}</td>
+          <td data-label="AI">${statusPills(t)}</td>
+          <td class="muted" data-label="Updated">${ago(t.updated_at, now)} ago</td>
         </tr>`).join("")}
       </tbody></table></div>
   </section>`;
@@ -552,6 +567,13 @@ document.addEventListener("submit", async (event) => {
     toast(`${DATA.field_labels[name]} changed. The change is in the activity log.`);
   } catch (error) { toast(error.message); }
   state.editing = null;
+  render();
+});
+
+document.addEventListener("change", (event) => {
+  if (event.target.id !== "assignee") return;
+  state.assignee = event.target.value;
+  remember("assignee", state.assignee);
   render();
 });
 
