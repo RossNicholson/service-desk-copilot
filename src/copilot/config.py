@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     # Ticket system and test mail server.
     zammad_url: str = "http://localhost:8080"
     zammad_token: SecretStr | None = None
+    zammad_group: str = "Users"
     smtp_host: str = "localhost"
     smtp_port: int = 1025
 

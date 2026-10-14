@@ -6,7 +6,9 @@ Steps:
 3. Deactivate Zammad's automatic replies to customers (the copilot never replies to
    clients, and nor should the demo ticket system).
 4. Thread follow-up emails onto their ticket by their References headers.
-5. Create an API token for the copilot and print it, so it can go in .env.
+5. Add the copilot's fields to tickets as custom attributes (``copilot_category``
+   and so on), then wait for Zammad to restart and apply them.
+6. Create an API token for the copilot and print it, so it can go in .env.
 
 Run once after `docker compose up -d --wait`:
 
@@ -17,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
 import json
 import os
 import secrets
@@ -159,6 +162,32 @@ def wait_for_zammad(zammad: Zammad, timeout: int = 300) -> dict:
             time.sleep(5)
 
 
+def add_copilot_fields(admin: Zammad) -> None:
+    from copilot.tickets.zammad import attribute_definitions
+
+    existing = {a["name"] for a in admin.request("GET", "/api/v1/object_manager_attributes")}
+    missing = [a for a in attribute_definitions() if a["name"] not in existing]
+    if not missing:
+        return
+    for attribute in missing:
+        admin.request("POST", "/api/v1/object_manager_attributes", attribute)
+    # Applying the migration restarts Zammad's Rails server, which drops the
+    # connection, so wait for it to come back.
+    with contextlib.suppress(urllib.error.URLError, ConnectionError):
+        admin.request("POST", "/api/v1/object_manager_attributes_execute_migrations", {})
+    time.sleep(5)
+    deadline = time.monotonic() + 300
+    while True:
+        try:
+            admin.request("GET", "/api/v1/users/me")
+            break
+        except (urllib.error.URLError, ConnectionError):
+            if time.monotonic() > deadline:
+                sys.exit("Zammad did not come back after adding the copilot's fields.")
+            time.sleep(5)
+    print(f"Added {len(missing)} copilot fields to Zammad tickets.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Configure a fresh Zammad from .env.")
     parser.add_argument(
@@ -194,6 +223,8 @@ def main() -> None:
             if setting["state_current"] != value:
                 admin.request("PUT", f"/api/v1/settings/{setting['id']}", {"state_current": value})
                 print("Enabled follow-up detection by email references")
+
+    add_copilot_fields(admin)
 
     if args.no_token:
         return
