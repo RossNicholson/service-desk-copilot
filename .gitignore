@@ -1,0 +1,23 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# Generator working files
+datagen/.cache/
+datagen/runs/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
