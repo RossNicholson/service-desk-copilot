@@ -55,6 +55,8 @@ Service Desk Copilot is an open-source portfolio project: an AI assistant for MS
 
 Agreed with Ross for the copilot's own screens (override UI, settings, demo pages): an admin dashboard layout with a coloured left sidebar and a rounded highlight on the active item, white rounded cards with soft shadows, a row of coloured stat tiles, line and bar charts, and tables with rounded status pills. Use **pastel colours** throughout, not saturated ones. Take the style only: no assets, fonts, logos or names from any third-party template.
 
+The UI lives in `src/copilot/web/`: a FastAPI app (`app.py`), the data it shows (`data.py`, dev split only), and plain HTML, CSS and JavaScript with no build step (`static/`). Colours are tokens at the top of `static/app.css`, with a dark theme. `scripts/export_ui_preview.py` builds a single-file preview with the data embedded. The API never returns the model API key, only whether one is set.
+
 ## Synthetic data rules
 
 The repository is public, so generated data must be verifiably fictional:
@@ -93,4 +95,5 @@ uv run python -m datagen.generate --help       # synthetic data generator
 docker compose up -d --wait                    # Postgres, Zammad, Mailpit
 uv run python scripts/bootstrap_zammad.py      # first run only: admin, email channel, token
 uv run python scripts/seed_mailpit.py          # replay dev threads into Mailpit
+uv run uvicorn copilot.web.app:app --reload    # the copilot's screens on http://localhost:8000
 ```

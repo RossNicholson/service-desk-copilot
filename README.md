@@ -28,6 +28,14 @@ Mail sent to `support@northgate-ms.example` through Mailpit's SMTP port (1025) i
 - Zammad: http://localhost:8080
 - Mailpit: http://localhost:8025
 
+## The copilot's screens
+
+```bash
+uv run uvicorn copilot.web.app:app --reload   # then open http://localhost:8000
+```
+
+A dashboard, the ticket list, a ticket view where every AI field shows its confidence and reason and can be changed or undone, alerts, harness scores and AI settings. For now it reads the synthetic dev threads rather than Zammad, takes AI values from the rules baseline, and keeps changes in memory; Phase 6 connects it to Zammad and the audit log. `uv run python scripts/export_ui_preview.py` writes the same screens as one HTML file that opens without a server.
+
 ## Evaluation
 
 ```bash
