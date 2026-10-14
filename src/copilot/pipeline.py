@@ -19,10 +19,13 @@ from copilot.schemas import (
     FieldChange,
     FieldPrediction,
     StructuredNote,
+    Suggestion,
     Thread,
     ThreadResult,
     Usage,
 )
+from copilot.suggest import PROMPT_NAME as SUGGEST_PROMPT
+from copilot.suggest import SuggestionWriter
 
 
 class ModelCopilot:
@@ -31,7 +34,9 @@ class ModelCopilot:
     For each inbound email the model proposes the ticket fields, then writes the
     note. Each follow-up from the client is also checked for chasing. Alerts go
     to the assigned engineer and escalate to the team lead by the rules in
-    `copilot.chasing`; the silence alert uses the model's priority.
+    `copilot.chasing`; the silence alert uses the model's priority. The first
+    email also gets a suggestion email drafted, unless the rules skip it
+    (`copilot.suggest`); whether it is sent is up to `copilot.service`.
     """
 
     name = "copilot"
@@ -42,6 +47,7 @@ class ModelCopilot:
         self.extractor = FieldExtractor(self.model, self.directory)
         self.notes = NoteWriter(self.model, self.directory)
         self.chases = ChaseDetector(self.model, self.directory)
+        self.suggester = SuggestionWriter(self.model, self.directory)
 
     def process(self, thread: Thread, now: datetime) -> ThreadResult:
         d = self.directory
@@ -52,6 +58,7 @@ class ModelCopilot:
         changes: list[FieldChange] = []
         notes: list[StructuredNote] = []
         assessed: list[tuple[ChaseAssessment, int]] = []
+        suggestion: Suggestion | None = None
         raw = None
         for index, email in enumerate(thread.messages):
             if email.from_address == d.support_address:
@@ -70,7 +77,11 @@ class ModelCopilot:
             current = fields
             subcategory = fields["subcategory"].value
             notes.append(self.notes.write(thread, index, redactor, subcategory))
-            if index > 0:
+            if index == 0:
+                # Drafted as of the first email, the only point one may be sent.
+                first = thread.model_copy(update={"messages": thread.messages[:1]})
+                suggestion = self.suggester.draft(first, redactor, fields)
+            else:
                 assessed.append(self.chases.assess(thread, index, redactor))
 
         alerts = chase_alerts(thread, assessed, d.support_address)
@@ -88,11 +99,12 @@ class ModelCopilot:
             notes=notes,
             chase_assessments=[a for a, _ in assessed],
             alerts=alerts,
+            suggestion=suggestion,
             model_inputs=self.model.inputs[inputs_before:],
             usage=Usage(
                 provider=after.provider,
                 model=after.model,
-                prompt_version=f"{EXTRACT_PROMPT}+{NOTE_PROMPT}+{CHASE_PROMPT}",
+                prompt_version=f"{EXTRACT_PROMPT}+{NOTE_PROMPT}+{CHASE_PROMPT}+{SUGGEST_PROMPT}",
                 calls=after.calls - before.calls,
                 prompt_tokens=after.prompt_tokens - before.prompt_tokens,
                 completion_tokens=after.completion_tokens - before.completion_tokens,

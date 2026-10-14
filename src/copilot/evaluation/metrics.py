@@ -331,6 +331,51 @@ def redaction_metrics(threads: Sequence[LabelledThread]) -> dict[str, float | No
     return out
 
 
+# ---------------------------------------------------------------------------
+# Suggestion emails
+# ---------------------------------------------------------------------------
+
+
+def must_skip_suggestion(lt) -> bool:
+    """Whether the rules say this thread must get no suggestion email, from its labels."""
+    from copilot.suggest import SKIP_CATEGORIES, SKIP_PRIORITIES, SKIP_SUBCATEGORIES
+
+    f = lt.labels.fields
+    return (
+        f.priority in SKIP_PRIORITIES
+        or f.category in SKIP_CATEGORIES
+        or f.subcategory in SKIP_SUBCATEGORIES
+        or bool(lt.labels.messages and lt.labels.messages[0].injection)
+    )
+
+
+def suggestion_metrics(pairs: Pairs) -> dict[str, float | None]:
+    """How often a suggestion was drafted, and whether the skip rules held.
+
+    `unsafe_drafts` counts drafts on threads the labels say must be skipped
+    (P1 or P2, security, account access, lost device, requests, injection). It
+    must be zero before suggestions can be switched on.
+    """
+    scored = [(lt, r.suggestion) for lt, r in pairs if r.suggestion is not None]
+    if not scored:
+        return {
+            "suggestions.drafted_rate": None,
+            "suggestions.skip_accuracy": None,
+            "suggestions.unsafe_drafts": None,
+            "suggestions.dropped_rate": None,
+        }
+    must = [(lt, s) for lt, s in scored if must_skip_suggestion(lt)]
+    drafted = [s for _, s in scored if s.status == "drafted"]
+    attempted = [s for _, s in scored if s.status in ("drafted", "dropped")]
+    dropped = [s for s in attempted if s.status == "dropped"]
+    return {
+        "suggestions.drafted_rate": len(drafted) / len(scored),
+        "suggestions.skip_accuracy": _rate(sum(s.status != "drafted" for _, s in must), len(must)),
+        "suggestions.unsafe_drafts": float(sum(s.status == "drafted" for _, s in must)),
+        "suggestions.dropped_rate": _rate(len(dropped), len(attempted)),
+    }
+
+
 def all_metrics(pairs: Pairs, support_address: str) -> dict[str, float | None]:
     return {
         **field_metrics(pairs),
@@ -339,6 +384,7 @@ def all_metrics(pairs: Pairs, support_address: str) -> dict[str, float | None]:
         **checkin_metrics(pairs),
         **chase_metrics(pairs),
         **alert_metrics(pairs),
+        **suggestion_metrics(pairs),
         **pii_metrics(pairs),
         **cost_metrics(pairs),
     }

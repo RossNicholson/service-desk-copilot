@@ -72,9 +72,18 @@ class FakeModel:
     """Answers with the first person listed and a fixed route, and records each call."""
 
     def __init__(
-        self, route=1, impact=3, urgency=2, confidence=0.9, raw=None, invent=False, frustration=1
+        self,
+        route=1,
+        impact=3,
+        urgency=2,
+        confidence=0.9,
+        raw=None,
+        invent=False,
+        frustration=1,
+        steps=("Restart the app and try again.", "Check whether a colleague sees the same."),
     ):
         self.calls = []
+        self.steps = list(steps)
         self.frustration = frustration
         self.invent = invent
         self.answer = {"route": route, "impact": impact, "urgency": urgency}
@@ -92,6 +101,10 @@ class FakeModel:
             return reply(fake_note(user, self.invent))
         if kwargs["response_format"].__name__ == "FollowUp":
             return reply(fake_followup(user, self.frustration))
+        if kwargs["response_format"].__name__ == "StepsOut":
+            return reply(
+                {"steps": self.steps, "worth_sending": bool(self.steps), "reason": "Common fix."}
+            )
         person = re.search(r"- (\[PERSON_\d+\]):", user)
         c = self.confidence
         return reply(
@@ -164,6 +177,7 @@ def test_one_call_per_inbound_email_with_previous_answer(directory, threads):
     kinds = [c["response_format"].__name__ for c in fake.calls]
     assert kinds.count("ExtractedFields") == kinds.count("NoteOut") == inbound
     assert kinds.count("FollowUp") <= inbound - 1
+    assert kinds.count("StepsOut") <= 1
     assert result.usage.calls == len(fake.calls)
     assert result.usage.prompt_tokens == 100 * len(fake.calls)
     extract = [c for c in fake.calls if c["response_format"].__name__ == "ExtractedFields"]

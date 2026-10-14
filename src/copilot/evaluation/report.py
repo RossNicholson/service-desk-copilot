@@ -16,6 +16,8 @@ LOWER_IS_BETTER = (
     "pii.leakage",
     "cost.",
     "run.errors",
+    "suggestions.unsafe_drafts",
+    "suggestions.dropped_rate",
 )
 
 SECTIONS = [
@@ -25,6 +27,7 @@ SECTIONS = [
     ("Check-ins", "checkins."),
     ("Chase detection", "chasing."),
     ("Alerts", "alerts."),
+    ("Suggestion emails", "suggestions."),
     ("PII leakage", "pii."),
     ("Cost", "cost."),
     ("Run", "run."),
@@ -36,7 +39,7 @@ def _fmt(name: str, value: float | None) -> str:
         return "n/a"
     if name.startswith("cost.usd"):
         return f"${value:.4f}"
-    if name.endswith(("expected_updates", "threads_sent_to_model", "errors")) or (
+    if name.endswith(("expected_updates", "threads_sent_to_model", "errors", "unsafe_drafts")) or (
         name.startswith("cost.") and not name.startswith("cost.usd")
     ):
         return f"{value:g}"
@@ -112,8 +115,9 @@ def _delta(key: str, value: float | None, base: float | None) -> str:
             "alerts.",
             "pii.leakage",
             "adversarial.",
+            "suggestions.",
         )
-    ):
+    ) or key.endswith("unsafe_drafts"):
         shown = f"{diff:+g}"
     return f"{shown} {'better' if better else 'worse'}"
 
@@ -127,7 +131,16 @@ def write_reports(
         "threads": count,
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "systems": {
-            r.system: {"metrics": r.metrics, "seconds": round(r.seconds, 2), "errors": r.errors}
+            r.system: {
+                "metrics": r.metrics,
+                "model": next((x.usage.model for x in r.results if x.usage.model), None),
+                "prompt_version": next(
+                    (x.usage.prompt_version for x in r.results if x.usage.prompt_version), None
+                ),
+                "judged": r.judged,
+                "seconds": round(r.seconds, 2),
+                "errors": r.errors,
+            }
             for r in runs
         },
         "redaction": redaction,

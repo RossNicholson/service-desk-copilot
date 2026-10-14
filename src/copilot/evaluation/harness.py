@@ -36,6 +36,7 @@ class SystemRun:
     results: list[ThreadResult] = field(repr=False)
     seconds: float = 0.0
     errors: list[str] = field(default_factory=list)
+    judged: bool = False
 
 
 def run_system(name: str, threads: list[LabelledThread], judge=None) -> SystemRun:
@@ -60,7 +61,14 @@ def run_system(name: str, threads: list[LabelledThread], judge=None) -> SystemRu
 
         metrics.update(judge_metrics(pairs, judge()))
     metrics["run.errors"] = float(len(errors))
-    return SystemRun(system=name, metrics=metrics, results=results, seconds=seconds, errors=errors)
+    return SystemRun(
+        system=name,
+        metrics=metrics,
+        results=results,
+        seconds=seconds,
+        errors=errors,
+        judged=bool(judge),
+    )
 
 
 def evaluate(

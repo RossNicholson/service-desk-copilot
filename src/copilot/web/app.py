@@ -15,6 +15,7 @@ The API key is never returned: settings report only whether one is set.
 
 from __future__ import annotations
 
+import html
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from functools import lru_cache
@@ -41,7 +42,10 @@ def service():
         return None
     from copilot.audit import PostgresAuditLog
     from copilot.baseline import BaselineCopilot
+    from copilot.directory import load_directory
+    from copilot.mail import SmtpMailer
     from copilot.notify import LogNotifier, TeamsNotifier
+    from copilot.outreach import Outreach
     from copilot.pipeline import ModelCopilot
     from copilot.service import CopilotService
     from copilot.tickets.zammad import ZammadAdapter
@@ -50,9 +54,22 @@ def service():
         TeamsNotifier(s.teams_webhook_url, s.public_url) if s.teams_webhook_url else LogNotifier()
     )
     system = ModelCopilot() if model_configured(s) else BaselineCopilot()
-    return CopilotService(
-        system, ZammadAdapter.from_settings(s), PostgresAuditLog.from_settings(s), notifier
-    )
+    directory = load_directory()
+    adapter = ZammadAdapter.from_settings(s)
+    audit = PostgresAuditLog.from_settings(s)
+    mailer = None
+    if s.suggestion_email_transport == "smtp":
+        mailer = SmtpMailer(
+            s.smtp_host,
+            s.smtp_port,
+            directory.support_address,
+            f"{directory.msp_name} service desk",
+            s.smtp_username,
+            s.smtp_password,
+            s.smtp_starttls,
+        )
+    outreach = Outreach(s, adapter, audit, notifier, directory, mailer)
+    return CopilotService(system, adapter, audit, notifier, directory, outreach)
 
 
 @asynccontextmanager
@@ -124,6 +141,102 @@ def _live_field(live, ticket_id: str, name: str) -> dict:
     return live_fields(ticket, live.audit.events(ticket_id))[name]
 
 
+# -- the client's "this fixed it" page (public: keep it outside Cloudflare Access) ----------
+
+
+def _fixed_page(body: str, status: int = 200) -> HTMLResponse:
+    from copilot.directory import load_directory
+
+    template = (STATIC / "fixed.html").read_text(encoding="utf-8")
+    msp = html.escape(load_directory().msp_name)
+    return HTMLResponse(template.format(msp=msp, body=body), status_code=status)
+
+
+def _paragraph(text: str) -> str:
+    return f"<p>{html.escape(text)}</p>"
+
+
+@app.get("/fixed/{token}", include_in_schema=False, response_class=HTMLResponse)
+def fixed_page(token: str):
+    """Shows a confirm button. Opening the link changes nothing, so mail scanners are safe."""
+    live = service()
+    if live is None or live.outreach is None:
+        return _fixed_page(_paragraph("This link is not valid or has expired."), 404)
+    _, ticket, problem = live.outreach.check_link(token)
+    if problem:
+        return _fixed_page(f"<h1>Thanks for checking</h1>{_paragraph(problem)}", 410)
+    token_attr = html.escape(token, quote=True)
+    button = "Yes, it is fixed. Close my ticket"
+    return _fixed_page(
+        "<h1>Did one of our suggestions fix it?</h1>"
+        + _paragraph(f"Ticket {ticket.number}: {ticket.title}")
+        + _paragraph(
+            "If it is fixed, press the button and we will close your ticket. If not, there "
+            "is nothing to do: an engineer still has it and will reply."
+        )
+        + f'<form method="post" action="/fixed/{token_attr}">'
+        + f'<button type="submit">{button}</button></form>'
+    )
+
+
+@app.post("/fixed/{token}", include_in_schema=False, response_class=HTMLResponse)
+def fixed_confirm(token: str):
+    live = service()
+    if live is None or live.outreach is None:
+        return _fixed_page(_paragraph("This link is not valid or has expired."), 404)
+    problem = live.outreach.client_confirms(token)
+    if problem:
+        return _fixed_page(f"<h1>Thanks for checking</h1>{_paragraph(problem)}", 410)
+    return _fixed_page(
+        "<h1>Thanks, your ticket is closed</h1>"
+        + _paragraph(
+            "We have let the engineer know. If the problem comes back, reply to any email "
+            "about this ticket and it will open again."
+        )
+    )
+
+
+# -- engineers ----------------------------------------------------------------------
+
+
+class SuggestionSwitch(BaseModel):
+    enabled: bool
+
+
+def _live_or_409():
+    live = service()
+    if live is None or live.outreach is None:
+        raise HTTPException(409, "Only available on live tickets (COPILOT_SOURCE=zammad).")
+    return live
+
+
+@app.post("/api/tickets/{ticket_id}/suggestions")
+def suggestions_switch(
+    ticket_id: str,
+    body: SuggestionSwitch,
+    cf_user: str | None = Header(None, alias="Cf-Access-Authenticated-User-Email"),
+):
+    live = _live_or_409()
+    live.outreach.set_enabled(ticket_id, body.enabled, _engineer(cf_user))
+    return {"enabled": body.enabled}
+
+
+@app.post("/api/tickets/{ticket_id}/reopen")
+def reopen(
+    ticket_id: str,
+    cf_user: str | None = Header(None, alias="Cf-Access-Authenticated-User-Email"),
+):
+    from copilot.tickets import TicketNotFound
+
+    live = _live_or_409()
+    try:
+        ticket = live._ticket(ticket_id)
+    except TicketNotFound:
+        raise HTTPException(404, "No ticket with that id.") from None
+    live.outreach.reopen(ticket, _engineer(cf_user), "Reopened by an engineer.")
+    return {"state": "open"}
+
+
 @app.get("/api/settings")
 def settings():
     s = get_settings()
@@ -137,6 +250,19 @@ def settings():
         "rate_limit_per_minute": s.rate_limit_per_minute,
         "source": s.copilot_source,
         "teams_webhook_set": bool(s.teams_webhook_url),  # never the URL itself
+        "suggestions": _suggestion_settings(s),
+    }
+
+
+def _suggestion_settings(s) -> dict:
+    from copilot.outreach import harness_clearance
+
+    return {
+        "enabled": s.suggestions_enabled,
+        "clients": s.suggestion_clients or "none",
+        "transport": s.suggestion_email_transport,
+        "link_secret_set": bool(s.suggestion_link_secret),  # never the secret itself
+        "harness": harness_clearance(s) or "Cleared by the latest harness run.",
     }
 
 

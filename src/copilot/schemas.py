@@ -106,6 +106,14 @@ class Usage(BaseModel):
     cost_usd: float = 0.0
 
 
+class Suggestion(BaseModel):
+    """The AI suggestion email for a new ticket: drafted, skipped by the rules, or dropped."""
+
+    status: Literal["drafted", "skipped", "dropped"]
+    reason: str
+    steps: list[str] = []
+
+
 class ThreadResult(BaseModel):
     thread_id: str
     system: str
@@ -114,6 +122,9 @@ class ThreadResult(BaseModel):
     notes: list[StructuredNote] = []
     chase_assessments: list[ChaseAssessment] = []
     alerts: list[Alert] = []
+    suggestion: Suggestion | None = Field(
+        default=None, description="Only systems that write suggestion emails set this."
+    )
     model_inputs: list[str] = Field(
         default=[],
         description="Every piece of text sent to a model, recorded for the PII leakage check.",

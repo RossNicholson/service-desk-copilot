@@ -38,7 +38,8 @@ Agreed with Ross (14 October 2026), changing the original rule that the AI never
 ## Architecture
 
 - Python 3.12, FastAPI, Pydantic schemas with structured output, Postgres.
-- Zammad (open source) as the ticket system, accessed **only** through an adapter interface with four operations: create ticket, update fields, add note, list tickets. A ServiceNow adapter comes later, so keep the interface clean and covered by a shared test suite that every adapter must pass. The interface is `copilot.tickets.TicketAdapter`; the suite is `tests/adapter_contract.py`. The copilot's fields live in Zammad custom attributes named `copilot_<field>`.
+- Zammad (open source) as the ticket system, accessed **only** through an adapter interface with four operations: create ticket, update fields, add note, list tickets, plus set state, used only for the client-confirmed close and an engineer's reopen. A ServiceNow adapter comes later, so keep the interface clean and covered by a shared test suite that every adapter must pass. The interface is `copilot.tickets.TicketAdapter`; the suite is `tests/adapter_contract.py`. The copilot's fields live in Zammad custom attributes named `copilot_<field>`.
+- Suggestion emails: drafting and the skip rules in `copilot.suggest`, the injection check in `copilot.injection`, sending and the client-confirmed close in `copilot.outreach`, signed links in `copilot.links`. The `/fixed/` confirm page is public, so keep it outside Cloudflare Access.
 - `copilot.service.CopilotService` is the copilot in service (check-ins, overrides, alerts), and `copilot.audit` is the append-only audit log. Overrides lock a field until reverted.
 - Mailpit as a local test mail server; Zammad's email channel for intake.
 - APScheduler for check-ins and staleness checks.

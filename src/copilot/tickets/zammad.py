@@ -19,7 +19,14 @@ from pydantic import SecretStr
 
 from copilot.config import Settings, get_settings
 from copilot.schemas import Email
-from copilot.tickets.base import COPILOT_FIELDS, Ticket, TicketNotFound, Value, check_fields
+from copilot.tickets.base import (
+    COPILOT_FIELDS,
+    Ticket,
+    TicketNotFound,
+    Value,
+    check_fields,
+    check_state,
+)
 
 PREFIX = "copilot_"
 INTEGER_FIELDS = ("impact", "urgency")
@@ -196,6 +203,11 @@ class ZammadAdapter:
             page += 1
         tickets.sort(key=lambda t: int(t.id))
         return [t for t in tickets if t.is_open or not open_only]
+
+    def set_state(self, ticket_id: str, state: str) -> Ticket:
+        check_state(state)
+        self._call("PUT", f"/tickets/{ticket_id}", json={"state": state})
+        return self._ticket(self._call("GET", f"/tickets/{ticket_id}?expand=true"))
 
     # -- mapping ----------------------------------------------------------------------
 

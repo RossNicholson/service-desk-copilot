@@ -3,7 +3,8 @@
 `CopilotService.check_in` is what the scheduler runs every few minutes. For each
 open ticket with emails it has not seen, it runs the copilot over the thread,
 sets the fields an engineer has not overridden, adds a note when the note has
-changed, and sends any new chase alerts. Every open ticket is also checked for
+changed, sends any new chase alerts, and (with `copilot.outreach`) sends a new
+ticket's AI suggestion email if every switch allows it. Every open ticket is also checked for
 silence against the response target for its current priority (an engineer's
 override included), escalating to the team lead at twice the target.
 
@@ -28,6 +29,7 @@ from copilot.baseline import silence_alert
 from copilot.chasing import escalate_silence
 from copilot.directory import Directory, load_directory
 from copilot.notify import Notifier, recipient
+from copilot.outreach import Outreach
 from copilot.schemas import Alert, StructuredNote, Thread, ThreadResult
 from copilot.tickets import Ticket, TicketAdapter, TicketNotFound
 
@@ -44,6 +46,7 @@ class System(Protocol):
 class CheckInReport:
     processed: list[str] = field(default_factory=list)
     alerts: list[tuple[str, Alert]] = field(default_factory=list)
+    suggestions: list[str] = field(default_factory=list)
 
 
 def note_text(note: StructuredNote) -> str:
@@ -66,6 +69,24 @@ def note_text(note: StructuredNote) -> str:
     return "\n".join(lines)
 
 
+def without_own_emails(ticket: Ticket, events: list[AuditEvent]) -> Ticket:
+    """The ticket without the copilot's own suggestion email.
+
+    A ticket system that collects all the mail (Zammad with Mailpit, or a copy
+    sent to the support address) adds the suggestion email to the ticket. It is
+    not a reply from an engineer, so it must not stop the silence alert."""
+    own = {
+        e.detail.get("message_id")
+        for e in events
+        if e.kind == "suggestion" and e.detail.get("action") == "sent"
+    }
+    if not own:
+        return ticket
+    return ticket.model_copy(
+        update={"emails": [e for e in ticket.emails if e.message_id not in own]}
+    )
+
+
 def alert_key(alert: Alert) -> str:
     return f"{alert.kind}:{alert.message_index}:{alert.notify}"
 
@@ -77,6 +98,7 @@ class CopilotService:
     audit: AuditLog
     notifier: Notifier
     directory: Directory = field(default_factory=load_directory)
+    outreach: Outreach | None = None
 
     # -- the scheduled check-in -------------------------------------------------------
 
@@ -87,12 +109,17 @@ class CopilotService:
             if not ticket.emails:
                 continue
             events = self.audit.events(ticket.id)
+            ticket = without_own_emails(ticket, events)
             runs = [e for e in events if e.kind == "run"]
             alerts: list[Alert] = []
             if not runs or runs[-1].detail.get("emails") != len(ticket.emails):
                 result = self.system.process(ticket.thread, now)
                 ticket = self._apply(ticket, result, events, now)
                 report.processed.append(ticket.id)
+                if self.outreach:
+                    self.outreach.client_wrote_again(ticket, events)
+                    if self.outreach.consider(ticket, result, events):
+                        report.suggestions.append(ticket.id)
                 alerts += self._live_chases(ticket, result)
             alerts += self._silence(ticket, now)
             sent = {e.detail.get("key") for e in events if e.kind == "alert"}
