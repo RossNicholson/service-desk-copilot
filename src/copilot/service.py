@@ -3,7 +3,8 @@
 `CopilotService.check_in` is what the scheduler runs every few minutes. For each
 open ticket with emails it has not seen, it runs the copilot over the thread,
 sets the fields an engineer has not overridden, adds a note when the note has
-changed, and sends any new chase alerts. Every open ticket is also checked for
+changed, sends any new chase alerts, and (with `copilot.outreach`) sends a new
+ticket's AI suggestion email if every switch allows it. Every open ticket is also checked for
 silence against the response target for its current priority (an engineer's
 override included), escalating to the team lead at twice the target.
 
@@ -28,6 +29,7 @@ from copilot.baseline import silence_alert
 from copilot.chasing import escalate_silence
 from copilot.directory import Directory, load_directory
 from copilot.notify import Notifier, recipient
+from copilot.outreach import Outreach
 from copilot.schemas import Alert, StructuredNote, Thread, ThreadResult
 from copilot.tickets import Ticket, TicketAdapter, TicketNotFound
 
@@ -44,6 +46,7 @@ class System(Protocol):
 class CheckInReport:
     processed: list[str] = field(default_factory=list)
     alerts: list[tuple[str, Alert]] = field(default_factory=list)
+    suggestions: list[str] = field(default_factory=list)
 
 
 def note_text(note: StructuredNote) -> str:
@@ -77,6 +80,7 @@ class CopilotService:
     audit: AuditLog
     notifier: Notifier
     directory: Directory = field(default_factory=load_directory)
+    outreach: Outreach | None = None
 
     # -- the scheduled check-in -------------------------------------------------------
 
@@ -93,6 +97,10 @@ class CopilotService:
                 result = self.system.process(ticket.thread, now)
                 ticket = self._apply(ticket, result, events, now)
                 report.processed.append(ticket.id)
+                if self.outreach:
+                    self.outreach.client_wrote_again(ticket, events)
+                    if self.outreach.consider(ticket, result, events):
+                        report.suggestions.append(ticket.id)
                 alerts += self._live_chases(ticket, result)
             alerts += self._silence(ticket, now)
             sent = {e.detail.get("key") for e in events if e.kind == "alert"}

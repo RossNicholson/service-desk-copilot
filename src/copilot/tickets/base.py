@@ -57,6 +57,19 @@ class TicketAdapter(Protocol):
         """Tickets with their emails, oldest first."""
         ...
 
+    def set_state(self, ticket_id: str, state: str) -> Ticket:
+        """Close ("closed") or reopen ("open") a ticket. Only for a client confirming
+        that an AI suggestion fixed their issue, or an engineer reopening it."""
+        ...
+
+
+STATES = ("open", "closed")
+
+
+def check_state(state: str) -> None:
+    if state not in STATES:
+        raise ValueError(f"State must be one of {', '.join(STATES)}")
+
 
 def check_fields(fields: dict[str, Value]) -> None:
     unknown = set(fields) - set(COPILOT_FIELDS)

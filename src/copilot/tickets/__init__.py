@@ -1,9 +1,11 @@
 """The ticket system, behind one small interface.
 
 The copilot talks to a ticket system only through `TicketAdapter`, with four
-operations: create a ticket, update its fields, add a note and list tickets.
+operations: create a ticket, update its fields, add a note and list tickets, plus
+a fifth, set state, used only to close a ticket when a client confirms that an
+AI suggestion fixed it, and to reopen it.
 `ZammadAdapter` is the real one; `MemoryAdapter` keeps tickets in memory for
-tests and the offline demo. A ServiceNow adapter would implement the same four
+tests and the offline demo. A ServiceNow adapter would implement the same
 operations and must pass the same shared test suite (`tests/adapter_contract.py`).
 """
 

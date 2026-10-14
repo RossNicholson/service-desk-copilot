@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 from copilot.baseline import PREFIX
 from copilot.schemas import Email
-from copilot.tickets.base import Ticket, TicketNotFound, Value, check_fields
+from copilot.tickets.base import Ticket, TicketNotFound, Value, check_fields, check_state
 
 
 @dataclass
@@ -41,14 +41,23 @@ class MemoryAdapter:
             t.model_copy(deep=True) for t in self.tickets.values() if t.is_open or not open_only
         ]
 
+    def set_state(self, ticket_id: str, state: str) -> Ticket:
+        check_state(state)
+        ticket = self._get(ticket_id)
+        ticket.state = state
+        return ticket.model_copy(deep=True)
+
     # Not part of the interface: what the ticket system does on its own.
 
     def receive(self, ticket_id: str, email: Email, support: str | None = None) -> None:
         """A follow-up email, or a reply from the desk, arriving on a ticket."""
         ticket = self._get(ticket_id)
         ticket.emails.append(email)
-        if support and email.from_address == support and ticket.state == "new":
-            ticket.state = "open"
+        if support and email.from_address == support:
+            if ticket.state == "new":
+                ticket.state = "open"
+        elif ticket.state == "closed":
+            ticket.state = "open"  # as Zammad does when a client writes again
 
     def assign(self, ticket_id: str, owner: str | None) -> None:
         self._get(ticket_id).owner = owner

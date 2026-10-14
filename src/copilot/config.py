@@ -57,6 +57,25 @@ class Settings(BaseSettings):
 
     smtp_host: str = "localhost"
     smtp_port: int = 1025
+    smtp_username: str | None = None
+    smtp_password: SecretStr | None = None
+    smtp_starttls: bool = False
+
+    # AI suggestion emails to clients (see CLAUDE.md). Off by default; on only when
+    # switched on globally, for the client (client ids, comma separated, or "all"),
+    # with a way to send, a link secret, and harness scores that clear them.
+    suggestions_enabled: bool = False
+    suggestion_clients: str = ""
+    suggestion_email_transport: Literal["off", "smtp"] = "off"
+    suggestion_link_secret: SecretStr | None = None
+    suggestions_require_harness: bool = True
+
+    def suggestion_client_ids(self) -> set[str] | None:
+        """The clients suggestions are on for; None means all of them."""
+        value = self.suggestion_clients.strip()
+        if value.lower() == "all":
+            return None
+        return {c.strip() for c in value.split(",") if c.strip()}
 
 
 @lru_cache

@@ -81,3 +81,13 @@ class AdapterContract:
     def test_a_missing_ticket_is_an_error(self, adapter):
         with pytest.raises(TicketNotFound):
             adapter.update_fields("999999999", {"category": "Hardware"})
+
+    def test_set_state_closes_and_reopens(self, adapter):
+        ticket = adapter.create_ticket(first_email())
+        closed = adapter.set_state(ticket.id, "closed")
+        assert not closed.is_open
+        assert ticket.id not in [t.id for t in adapter.list_tickets()]
+        assert ticket.id in [t.id for t in adapter.list_tickets(open_only=False)]
+        assert adapter.set_state(ticket.id, "open").is_open
+        with pytest.raises(ValueError):
+            adapter.set_state(ticket.id, "merged")
