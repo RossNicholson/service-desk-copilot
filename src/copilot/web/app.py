@@ -2,30 +2,73 @@
 
     uv run uvicorn copilot.web.app:app --reload     # then open http://localhost:8000
 
-This is the Phase 6 UI started early as a preview. It reads the synthetic dev
-threads rather than Zammad, takes AI values from the rules baseline unless a
-model is configured, and keeps overrides in memory, so they reset on restart.
+With ``COPILOT_SOURCE=demo`` (the default) it shows the synthetic dev threads with
+the rules baseline's values and keeps overrides in memory, so they reset on
+restart. With ``COPILOT_SOURCE=zammad`` it works on the live Zammad: the scheduled
+check-ins run in the background, overrides are written to Zammad and the audit
+log in Postgres, and the copilot leaves an overridden field alone until it is
+reverted. Behind Cloudflare Access, the engineer is named from the
+``Cf-Access-Authenticated-User-Email`` header Access adds.
+
 The API key is never returned: settings report only whether one is set.
 """
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from functools import lru_cache
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from copilot.config import get_settings
 from copilot.llm import model_configured
-from copilot.web.data import snapshot
+from copilot.schemas import FIELD_NAMES
+from copilot.web.data import live_fields, live_snapshot, snapshot
 
 STATIC = Path(__file__).parent / "static"
 
-app = FastAPI(title="Service Desk Copilot", docs_url=None, redoc_url=None)
+
+@lru_cache
+def service():
+    """The live copilot, when COPILOT_SOURCE=zammad; None for the demo."""
+    s = get_settings()
+    if s.copilot_source != "zammad":
+        return None
+    from copilot.audit import PostgresAuditLog
+    from copilot.baseline import BaselineCopilot
+    from copilot.notify import LogNotifier, TeamsNotifier
+    from copilot.pipeline import ModelCopilot
+    from copilot.service import CopilotService
+    from copilot.tickets.zammad import ZammadAdapter
+
+    notifier = (
+        TeamsNotifier(s.teams_webhook_url, s.public_url) if s.teams_webhook_url else LogNotifier()
+    )
+    system = ModelCopilot() if model_configured(s) else BaselineCopilot()
+    return CopilotService(
+        system, ZammadAdapter.from_settings(s), PostgresAuditLog.from_settings(s), notifier
+    )
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    live = service()
+    scheduler = None
+    if live is not None:
+        from copilot.scheduler import start
+
+        scheduler = start(live)
+    yield
+    if scheduler is not None:
+        scheduler.shutdown(wait=False)
+
+
+app = FastAPI(title="Service Desk Copilot", docs_url=None, redoc_url=None, lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 
@@ -68,7 +111,17 @@ def index():
 
 @app.get("/api/data")
 def data():
-    return _data()
+    live = service()
+    return live_snapshot(live) if live else _data()
+
+
+def _engineer(header: str | None, given: str = "You") -> str:
+    return header or given
+
+
+def _live_field(live, ticket_id: str, name: str) -> dict:
+    ticket = live._ticket(ticket_id)
+    return live_fields(ticket, live.audit.events(ticket_id))[name]
 
 
 @app.get("/api/settings")
@@ -82,11 +135,29 @@ def settings():
         "model_configured": model_configured(s),
         "spend_cap_usd": s.spend_cap_usd,
         "rate_limit_per_minute": s.rate_limit_per_minute,
+        "source": s.copilot_source,
+        "teams_webhook_set": bool(s.teams_webhook_url),  # never the URL itself
     }
 
 
 @app.post("/api/tickets/{ticket_id}/fields/{name}")
-def override(ticket_id: str, name: str, body: Override):
+def override(
+    ticket_id: str,
+    name: str,
+    body: Override,
+    cf_user: str | None = Header(None, alias="Cf-Access-Authenticated-User-Email"),
+):
+    if name not in FIELD_NAMES:
+        raise HTTPException(404, "No field with that name.")
+    live = service()
+    if live is not None:
+        from copilot.tickets import TicketNotFound
+
+        try:
+            live.override(ticket_id, name, body.value, _engineer(cf_user, body.engineer))
+        except TicketNotFound:
+            raise HTTPException(404, "No ticket with that id.") from None
+        return _live_field(live, ticket_id, name)
     ticket = _ticket(ticket_id)
     field = ticket["fields"].get(name)
     if field is None:
@@ -97,7 +168,7 @@ def override(ticket_id: str, name: str, body: Override):
         "field": name,
         "from": field["value"],
         "to": body.value,
-        "by": body.engineer,
+        "by": _engineer(cf_user, body.engineer),
         "at": datetime.now(UTC).isoformat(timespec="seconds"),
         "action": "override",
     }
@@ -108,7 +179,22 @@ def override(ticket_id: str, name: str, body: Override):
 
 
 @app.delete("/api/tickets/{ticket_id}/fields/{name}")
-def revert(ticket_id: str, name: str):
+def revert(
+    ticket_id: str,
+    name: str,
+    cf_user: str | None = Header(None, alias="Cf-Access-Authenticated-User-Email"),
+):
+    live = service()
+    if live is not None:
+        from copilot.tickets import TicketNotFound
+
+        try:
+            live.revert(ticket_id, name, _engineer(cf_user))
+        except TicketNotFound:
+            raise HTTPException(404, "No ticket with that id.") from None
+        except LookupError:
+            raise HTTPException(409, "That field has not been overridden.") from None
+        return _live_field(live, ticket_id, name)
     ticket = _ticket(ticket_id)
     field = ticket["fields"].get(name)
     if field is None or not field.get("overridden"):
@@ -119,7 +205,7 @@ def revert(ticket_id: str, name: str):
             "field": name,
             "from": field["value"],
             "to": field["ai_value"],
-            "by": "You",
+            "by": _engineer(cf_user),
             "at": datetime.now(UTC).isoformat(timespec="seconds"),
             "action": "revert",
         }

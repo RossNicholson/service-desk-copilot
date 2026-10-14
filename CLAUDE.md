@@ -38,7 +38,8 @@ Agreed with Ross (14 October 2026), changing the original rule that the AI never
 ## Architecture
 
 - Python 3.12, FastAPI, Pydantic schemas with structured output, Postgres.
-- Zammad (open source) as the ticket system, accessed **only** through an adapter interface with four operations: create ticket, update fields, add note, list tickets. A ServiceNow adapter comes later, so keep the interface clean and covered by a shared test suite that every adapter must pass.
+- Zammad (open source) as the ticket system, accessed **only** through an adapter interface with four operations: create ticket, update fields, add note, list tickets. A ServiceNow adapter comes later, so keep the interface clean and covered by a shared test suite that every adapter must pass. The interface is `copilot.tickets.TicketAdapter`; the suite is `tests/adapter_contract.py`. The copilot's fields live in Zammad custom attributes named `copilot_<field>`.
+- `copilot.service.CopilotService` is the copilot in service (check-ins, overrides, alerts), and `copilot.audit` is the append-only audit log. Overrides lock a field until reverted.
 - Mailpit as a local test mail server; Zammad's email channel for intake.
 - APScheduler for check-ins and staleness checks.
 - Everything runs with a single `docker compose up`.
@@ -71,7 +72,7 @@ Agreed with Ross (14 October 2026), changing the original rule that the AI never
 
 Agreed with Ross for the copilot's own screens (override UI, settings, demo pages): an admin dashboard layout with a coloured left sidebar and a rounded highlight on the active item, white rounded cards with soft shadows, a row of coloured stat tiles, line and bar charts, and tables with rounded status pills. Use **pastel colours** throughout, not saturated ones. **Every screen must work on a phone** (about 390px wide), so an engineer can check their tickets and a manager can check the stats from their phone: on phones the sidebar becomes a bottom tab bar, tables become cards, and nothing scrolls sideways. Take the style only: no assets, fonts, logos or names from any third-party template.
 
-The UI lives in `src/copilot/web/`: a FastAPI app (`app.py`), the data it shows (`data.py`, dev split only), and plain HTML, CSS and JavaScript with no build step (`static/`). Colours are tokens at the top of `static/app.css`, with a dark theme. `scripts/export_ui_preview.py` builds a single-file preview with the data embedded. The API never returns the model API key, only whether one is set.
+The UI lives in `src/copilot/web/`: a FastAPI app (`app.py`), the data it shows (`data.py`: the dev split in demo mode, or live tickets and the audit log with `COPILOT_SOURCE=zammad`), and plain HTML, CSS and JavaScript with no build step (`static/`). Colours are tokens at the top of `static/app.css`, with a dark theme. `scripts/export_ui_preview.py` builds a single-file preview with the data embedded. The API never returns the model API key or the Teams webhook URL, only whether one is set.
 
 ## Synthetic data rules
 
@@ -112,4 +113,5 @@ docker compose up -d --wait                    # Postgres, Zammad, Mailpit
 uv run python scripts/bootstrap_zammad.py      # first run only: admin, email channel, token
 uv run python scripts/seed_mailpit.py          # replay dev threads into Mailpit
 uv run uvicorn copilot.web.app:app --reload    # the copilot's screens on http://localhost:8000
+                                               # (COPILOT_SOURCE=zammad for live tickets)
 ```
