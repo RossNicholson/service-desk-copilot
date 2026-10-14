@@ -201,18 +201,9 @@ class BaselineCopilot:
                         )
                     )
 
-        first_at = _sent_at(thread.messages[0].date)
-        replied = any(e.from_address == d.support_address for e in thread.messages)
-        target = d.response_targets_minutes[str(current["priority"].value)]
-        deadline = first_at + timedelta(minutes=target)
-        if not replied and now > deadline:
-            alerts.append(
-                Alert(
-                    kind="silence",
-                    at=deadline,
-                    reason=f"No response within the {target} minute target.",
-                )
-            )
+        silence = silence_alert(thread, current["priority"].value, now, d)
+        if silence:
+            alerts.append(silence)
 
         return ThreadResult(
             thread_id=thread.thread_id,
@@ -223,6 +214,23 @@ class BaselineCopilot:
             chase_assessments=chases,
             alerts=alerts,
         )
+
+
+def silence_alert(
+    thread: Thread, priority_value, now: datetime, directory: Directory
+) -> Alert | None:
+    """An alert if nobody has replied within the response target for the priority."""
+    if priority_value not in directory.response_targets_minutes:
+        return None
+    first_at = _sent_at(thread.messages[0].date)
+    replied = any(e.from_address == directory.support_address for e in thread.messages)
+    target = directory.response_targets_minutes[str(priority_value)]
+    deadline = first_at + timedelta(minutes=target)
+    if replied or now <= deadline:
+        return None
+    return Alert(
+        kind="silence", at=deadline, reason=f"No response within the {target} minute target."
+    )
 
 
 def _sent_at(date_header: str) -> datetime:
