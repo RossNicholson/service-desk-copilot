@@ -139,9 +139,7 @@ class Outreach:
 
         first = ticket.emails[0]
         suggestion_id = uuid.uuid4().hex
-        token = make_token(
-            self.settings.suggestion_link_secret, ticket.id, first.from_address, suggestion_id
-        )
+        token = make_token(self.settings.suggestion_link_secret, ticket.id, suggestion_id)
         link = f"{self.settings.public_url.rstrip('/')}/fixed/{token}"
         contact = next(
             (
@@ -239,7 +237,7 @@ class Outreach:
         )
         if ticket is None or not ticket.emails:
             return link, None, "We could not find that ticket."
-        if ticket.emails[0].from_address.lower() != link.requester:
+        if ticket.emails[0].from_address.lower() != sent[-1].detail.get("to", "").lower():
             return link, None, "This link is not valid or has expired."
         if not ticket.is_open:
             return link, ticket, "Your ticket is already closed."
@@ -259,7 +257,10 @@ class Outreach:
                 kind="close",
                 actor="client",
                 reason="The client said an AI suggestion fixed it.",
-                detail={"suggestion_id": link.suggestion_id, "requester": link.requester},
+                detail={
+                    "suggestion_id": link.suggestion_id,
+                    "requester": ticket.emails[0].from_address,
+                },
             )
         )
         to = engineer_for(ticket, self.directory)

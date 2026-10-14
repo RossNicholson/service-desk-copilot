@@ -149,6 +149,7 @@ def snapshot(limit: int | None = None) -> dict:
         },
         "tickets": tickets,
         "audit": [],
+        "suggestions": None,
     }
 
 
@@ -194,9 +195,51 @@ def live_fields(ticket: Ticket, events: list[AuditEvent]) -> dict:
     return out
 
 
+def live_suggestion(events: list[AuditEvent]) -> dict:
+    """The ticket's suggestion email: sent, skipped, dropped or not yet decided."""
+    out = {"status": "none", "reason": None, "text": None, "at": None, "off": False}
+    for e in events:
+        if e.kind != "suggestion":
+            continue
+        action = e.detail.get("action")
+        if action in ("on", "off"):
+            out["off"] = action == "off"
+        else:
+            out.update(
+                status=action,
+                reason=e.reason,
+                text=e.new,
+                steps=e.detail.get("steps", []),
+                at=e.at.isoformat(timespec="seconds"),
+            )
+    states = [e for e in events if e.kind in ("close", "reopen")]
+    out["closed_by_client"] = bool(states) and states[-1].kind == "close"
+    return out
+
+
+def suggestion_stats(events: list[AuditEvent]) -> dict:
+    """How many suggestion emails went out, and how many clients said one fixed it."""
+    sent = {
+        e.detail.get("id")
+        for e in events
+        if e.kind == "suggestion" and e.detail.get("action") == "sent"
+    }
+    fixed = {
+        e.detail.get("suggestion_id")
+        for e in events
+        if e.kind == "close" and e.actor == "client" and e.detail.get("suggestion_id") in sent
+    }
+    return {
+        "sent": len(sent),
+        "fixed": len(fixed),
+        "fix_rate": len(fixed) / len(sent) if sent else None,
+    }
+
+
 def live_ticket(ticket: Ticket, events: list[AuditEvent], directory: Directory) -> dict:
     support = directory.support_address
     fields = live_fields(ticket, events)
+    suggestion = live_suggestion(events)
     owner = next(
         (e.name for e in directory.engineers if ticket.owner and e.email == ticket.owner),
         ticket.owner,
@@ -209,6 +252,8 @@ def live_ticket(ticket: Ticket, events: list[AuditEvent], directory: Directory) 
     status = STATES.get(ticket.state, ticket.state.title())
     if last is not None and last.from_address == support and ticket.is_open:
         status = "Waiting on client"
+    if not ticket.is_open and suggestion["closed_by_client"]:
+        status = "Closed by the client"
     return {
         "id": ticket.id,
         "number": ticket.number,
@@ -226,6 +271,8 @@ def live_ticket(ticket: Ticket, events: list[AuditEvent], directory: Directory) 
         "emails": _emails(ticket.emails, support),
         "note": notes[-1].detail.get("note") if notes else None,
         "alerts": alerts,
+        "open": ticket.is_open,
+        "suggestion": suggestion,
     }
 
 
@@ -236,11 +283,14 @@ def live_snapshot(service) -> dict:
     by_ticket: dict[str, list[AuditEvent]] = {}
     for event in events:
         by_ticket.setdefault(event.ticket_id, []).append(event)
-    tickets = [
-        live_ticket(t, by_ticket.get(t.id, []), d)
-        for t in service.adapter.list_tickets(open_only=False)
-        if t.emails
-    ]
+    from copilot.service import without_own_emails
+
+    tickets = []
+    for t in service.adapter.list_tickets(open_only=False):
+        events = by_ticket.get(t.id, [])
+        t = without_own_emails(t, events)
+        if t.emails:
+            tickets.append(live_ticket(t, events, d))
     return {
         **_common(d),
         "source": {
@@ -251,4 +301,5 @@ def live_snapshot(service) -> dict:
         },
         "tickets": tickets,
         "audit": [audit_entry(e) for e in events if e.kind in ("override", "revert")],
+        "suggestions": suggestion_stats(events),
     }

@@ -148,13 +148,9 @@ def test_the_email_says_it_is_ai_and_promises_nothing():
 def test_links_are_signed_and_expire():
     secret = SecretStr("s3cret-for-tests")
     now = datetime(2026, 10, 14, 9, 0, tzinfo=UTC)
-    token = make_token(secret, "42", "Dana@Example.example", "sug1", now)
+    token = make_token(secret, "42", "sug1", now)
     link = read_token(secret, token, now)
-    assert (link.ticket_id, link.requester, link.suggestion_id) == (
-        "42",
-        "dana@example.example",
-        "sug1",
-    )
+    assert (link.ticket_id, link.suggestion_id) == ("42", "sug1")
     assert read_token(SecretStr("other"), token, now) is None
     payload, sig = token.split(".")
     assert read_token(secret, payload[:-2] + "AA." + sig, now) is None

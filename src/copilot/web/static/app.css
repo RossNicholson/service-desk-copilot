@@ -134,6 +134,19 @@ a { color: inherit; }
 .t-mint { background: var(--mint); color: var(--mint-ink); }
 .t-peach { background: var(--peach); color: var(--peach-ink); }
 .t-rose { background: var(--rose); color: var(--rose-ink); }
+.tile .num small { font-size: 0.85rem; font-weight: 700; opacity: 0.8; }
+
+/* AI suggestion email on a ticket */
+.steps { margin: 6px 0 10px; padding-left: 22px; }
+.steps li { margin: 4px 0; }
+.sent-email {
+  white-space: pre-wrap; font: inherit; font-size: 0.9rem; margin: 8px 0; padding: 14px;
+  border-radius: 14px; background: var(--canvas); overflow-wrap: anywhere;
+}
+.row-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 10px 0 0; }
+.facts dt { font-weight: 700; }
+.facts dd { margin: 0; color: var(--ink-soft); overflow-wrap: anywhere; }
 
 /* Pills */
 .pill {
@@ -288,6 +301,9 @@ tbody tr:last-child td { border-bottom: 0; }
   .card { padding: 16px; }
   .grid { gap: 14px; }
   .grid.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid.tiles > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .facts { grid-template-columns: 1fr; gap: 2px; }
+  .facts dd { margin-bottom: 8px; }
   .tile { padding: 14px; gap: 10px; flex-direction: column; align-items: flex-start; }
   .tile .icon { width: 36px; height: 36px; border-radius: 11px; }
   .tile .num { font-size: 1.6rem; }

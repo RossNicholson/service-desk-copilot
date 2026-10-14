@@ -117,6 +117,16 @@ def test_a_new_ticket_gets_one_labelled_email(directory, first_email, tmp_path):
     assert "/fixed/" not in note
     [event] = decision(service, tid)
     assert event.detail["action"] == "sent" and event.detail["steps"] == STEPS
+    # The email coming back into the ticket system is not an engineer's reply.
+    sent = mailer.sent[0]
+    own = first_email.model_copy(
+        update={
+            "message_id": sent["Message-ID"],
+            "from_address": directory.support_address,
+        }
+    )
+    service.adapter.receive(tid, own, directory.support_address)
+    assert service.check_in(datetime.now(UTC)).processed == []
     # Never again, whatever the client sends next.
     service.adapter.receive(tid, first_email.model_copy(update={"message_id": "<2@x.example>"}))
     service.check_in(datetime.now(UTC))
@@ -174,6 +184,15 @@ def web_client(directory, first_email, tmp_path, monkeypatch):
     service.check_in(datetime.now(UTC))
     monkeypatch.setattr(web, "service", lambda: service)
     return TestClient(web.app), service, tid, link_from(mailer)
+
+
+def test_the_link_holds_no_personal_details(web_client, first_email):
+    import base64
+
+    _, _, _, token = web_client
+    payload = token.split(".")[0]
+    decoded = base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)).decode()
+    assert first_email.from_address not in decoded and "@" not in decoded
 
 
 def test_opening_the_link_changes_nothing(web_client):

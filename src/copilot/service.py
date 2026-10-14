@@ -69,6 +69,24 @@ def note_text(note: StructuredNote) -> str:
     return "\n".join(lines)
 
 
+def without_own_emails(ticket: Ticket, events: list[AuditEvent]) -> Ticket:
+    """The ticket without the copilot's own suggestion email.
+
+    A ticket system that collects all the mail (Zammad with Mailpit, or a copy
+    sent to the support address) adds the suggestion email to the ticket. It is
+    not a reply from an engineer, so it must not stop the silence alert."""
+    own = {
+        e.detail.get("message_id")
+        for e in events
+        if e.kind == "suggestion" and e.detail.get("action") == "sent"
+    }
+    if not own:
+        return ticket
+    return ticket.model_copy(
+        update={"emails": [e for e in ticket.emails if e.message_id not in own]}
+    )
+
+
 def alert_key(alert: Alert) -> str:
     return f"{alert.kind}:{alert.message_index}:{alert.notify}"
 
@@ -91,6 +109,7 @@ class CopilotService:
             if not ticket.emails:
                 continue
             events = self.audit.events(ticket.id)
+            ticket = without_own_emails(ticket, events)
             runs = [e for e in events if e.kind == "run"]
             alerts: list[Alert] = []
             if not runs or runs[-1].detail.get("emails") != len(ticket.emails):

@@ -69,6 +69,13 @@ const backend = {
   },
 };
 
+backend.post = async function (url, body) {
+  if (PREVIEW) throw new Error("Not available in the preview.");
+  const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || "That did not work.");
+  return response.json();
+};
+
 function entry(ticket, field, from, to, action) {
   return { ticket: ticket.id, field, from, to, by: "You", at: new Date().toISOString(), action };
 }
@@ -117,6 +124,7 @@ const ICONS = {
   chase: '<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   inbox: '<path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 3h6l1-3h5"/>',
+  check: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/>',
 };
 const icon = (name) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
@@ -195,7 +203,7 @@ function lineChart(series, labels) {
 // ---------------------------------------------------------------------------
 
 function dashboard() {
-  const tickets = DATA.tickets;
+  const tickets = DATA.tickets.filter((t) => t.open !== false);
   const now = nowOf();
   const flagged = tickets.reduce((n, t) => n + t.flagged.length, 0);
   const chasing = tickets.filter((t) => t.alerts.some((a) => a.kind === "chase")).length;
@@ -235,6 +243,7 @@ function dashboard() {
     <a class="tile t-peach" href="#tickets">${tileBody("review", flagged, "Fields to check")}</a>
     <a class="tile t-rose" href="#alerts">${tileBody("chase", chasing, "Clients chasing")}</a>
     <a class="tile t-sky" href="#alerts">${tileBody("clock", breached, "Past response target")}</a>
+    <a class="tile t-mint" href="#settings">${tileBody("check", fixRate(), "Fixed by AI suggestions")}</a>
   </div>
   <div class="grid two">
     <section class="card">
@@ -260,6 +269,12 @@ function dashboard() {
       </div>
     </section>
   </div>`;
+}
+
+function fixRate() {
+  const s = DATA.suggestions;
+  if (!s || !s.sent) return "Off";
+  return `${Math.round(100 * s.fix_rate)}%<small> of ${s.sent}</small>`;
 }
 
 function tileBody(name, value, label) {
@@ -335,6 +350,7 @@ function ticketView(id) {
         <div class="fields">${Object.keys(DATA.field_labels).filter((n) => t.fields[n]).map((n) => fieldRow(t, n)).join("")}</div>
       </section>
       ${noteCard(t)}
+      ${suggestionCard(t)}
       <section class="card">
         <div class="card-head"><h2>Activity</h2><span class="hint">Every AI change and every override is recorded</span></div>
         <div class="list">
@@ -410,6 +426,31 @@ function noteCard(t) {
   </section>`;
 }
 
+function suggestionCard(t) {
+  const s = t.suggestion;
+  if (!s) return "";
+  const live = DATA.source.live;
+  const status = {
+    sent: '<span class="pill ok">Sent</span>',
+    skipped: '<span class="pill muted">Not sent</span>',
+    dropped: '<span class="pill review">Dropped</span>',
+    none: s.off ? '<span class="pill muted">Off for this ticket</span>' : '<span class="pill muted">Not decided yet</span>',
+  }[s.status] || "";
+  const steps = (s.steps || []).length ? `<ol class="steps">${s.steps.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>` : "";
+  const toggle = live && s.status === "none"
+    ? `<button class="btn" data-suggestions="${s.off ? "on" : "off"}">${s.off ? "Allow for this ticket" : "Turn off for this ticket"}</button>` : "";
+  const reopen = live && !t.open ? '<button class="btn" data-reopen>Reopen ticket</button>' : "";
+  return `
+  <section class="card">
+    <div class="card-head"><h2>AI suggestion email</h2>${status}</div>
+    ${s.closed_by_client ? '<p><span class="pill ok">Closed by the client</span> They said a suggestion fixed it.</p>' : ""}
+    ${s.reason ? `<p class="muted">${esc(s.reason)}</p>` : ""}
+    ${s.status === "sent" && s.text ? `<pre class="sent-email">${esc(s.text)}</pre>` : steps}
+    ${s.at ? `<p class="muted">${fmtDate(s.at)}</p>` : ""}
+    ${toggle || reopen ? `<div class="row-actions">${toggle}${reopen}</div>` : ""}
+  </section>`;
+}
+
 function alerts() {
   const items = allAlerts().filter((a) => state.alertKind === "all" || a.kind === state.alertKind);
   const chip = (k, label) => `<button class="chip" data-kind="${k}" aria-pressed="${state.alertKind === k}">${label}</button>`;
@@ -424,13 +465,13 @@ function alerts() {
 const METRIC_GROUPS = [
   ["Ticket fields", "fields."], ["Prompt injection threads", "adversarial."], ["Notes", "notes."],
   ["Check-ins", "checkins."], ["Chase detection", "chasing."], ["Alerts", "alerts."],
-  ["PII leakage", "pii."], ["Cost", "cost."],
+  ["Suggestion emails", "suggestions."], ["PII leakage", "pii."], ["Cost", "cost."],
 ];
 
 function fmtMetric(key, v) {
   if (v === null || v === undefined) return '<span class="muted">n/a</span>';
   if (key.startsWith("cost.usd")) return `$${v.toFixed(4)}`;
-  if (key.startsWith("cost.") || key.endsWith("expected_updates") || key.endsWith("threads_sent_to_model")) return String(+v.toFixed(2));
+  if (key.startsWith("cost.") || key.endsWith("expected_updates") || key.endsWith("threads_sent_to_model") || key.endsWith("unsafe_drafts")) return String(+v.toFixed(2));
   if (key.endsWith("per_thread")) return v.toFixed(2);
   return `${(v * 100).toFixed(1)}%`;
 }
@@ -493,6 +534,16 @@ function settingsPage() {
       <label for="set-teams">Teams webhook<span>Where chasing and silence alerts go</span><input id="set-teams" placeholder="https://..." autocomplete="off"></label>
     </form>
   </section>
+  <section class="card">
+    <div class="card-head"><h2>AI suggestion emails</h2>${s.suggestions?.enabled ? '<span class="pill ok">On</span>' : '<span class="pill muted">Off</span>'}</div>
+    <p class="muted">A new ticket's client can get a few safe things to try while an engineer has it, clearly labelled as AI, with a button to say it is fixed. Skipped for P1 and P2, security, account access and lost devices.</p>
+    <dl class="facts">
+      <dt>Clients</dt><dd>${esc(s.suggestions?.clients ?? "none")}</dd>
+      <dt>Sending</dt><dd>${esc(s.suggestions?.transport ?? "off")}</dd>
+      <dt>Confirm link secret</dt><dd>${s.suggestions?.link_secret_set ? "Set" : "Not set"}</dd>
+      <dt>Harness</dt><dd>${esc(s.suggestions?.harness ?? "Not run")}</dd>
+    </dl>
+  </section>
   <div><button class="btn primary" id="save-settings" type="button">Save settings</button></div>`;
 }
 
@@ -535,7 +586,7 @@ function render() {
 }
 
 document.addEventListener("click", async (event) => {
-  const el = event.target.closest("[data-ticket],[data-priority],[data-kind],[data-edit],[data-revert],[data-cancel],#save-settings");
+  const el = event.target.closest("[data-ticket],[data-priority],[data-kind],[data-edit],[data-revert],[data-cancel],[data-suggestions],[data-reopen],#save-settings");
   if (!el) return;
   const r = route();
   const ticket = r.ticket && DATA.tickets.find((t) => t.id === r.ticket);
@@ -548,8 +599,23 @@ document.addEventListener("click", async (event) => {
     try { await backend.revert(ticket, el.dataset.revert); toast("Change undone. The AI's value is back."); }
     catch (error) { toast(error.message); }
     render();
+  } else if (el.dataset.suggestions) {
+    const enabled = el.dataset.suggestions === "on";
+    try {
+      await backend.post(`/api/tickets/${ticket.id}/suggestions`, { enabled });
+      ticket.suggestion.off = !enabled;
+      toast(enabled ? "Suggestions allowed for this ticket." : "No suggestion email will go out for this ticket.");
+    } catch (error) { toast(error.message); }
+    render();
+  } else if ("reopen" in el.dataset) {
+    try {
+      await backend.post(`/api/tickets/${ticket.id}/reopen`, {});
+      ticket.open = true; ticket.status = "Open"; ticket.suggestion.closed_by_client = false;
+      toast("Ticket reopened. The client has not been told.");
+    } catch (error) { toast(error.message); }
+    render();
   } else if (el.id === "save-settings") {
-    toast("Settings are read from .env in this version. Saving from this page arrives in Phase 6.");
+    toast("Settings are read from .env for now. Edit .env and restart the app.");
   }
 });
 
@@ -587,7 +653,7 @@ document.addEventListener("input", (event) => {
   input.setSelectionRange(caret, caret);
 });
 
-window.addEventListener("hashchange", () => { state.editing = null; render(); window.scrollTo(0, 0); });
+window.addEventListener("hashchange", () => { state.editing = null; if (DATA) render(); window.scrollTo(0, 0); });
 
 (async function start() {
   try {

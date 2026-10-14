@@ -4,7 +4,7 @@ An open-source AI assistant for MSP service desks that takes ticket admin off en
 
 Everything runs on synthetic data for a fictional MSP, **Northgate Managed Services**. The repository contains no real company, client or employee data.
 
-> Status: early development (Phase 6 of 8). A full README arrives in Phase 8.
+> Status: early development (Phase 7 of 8). A full README arrives in Phase 8.
 
 ## Quick start
 
@@ -42,7 +42,16 @@ By default (`COPILOT_SOURCE=demo`) the screens show the synthetic dev threads wi
 - uses your model if `LLM_API_KEY` is set, and the rules baseline otherwise;
 - sends chase and silence alerts to Teams if `TEAMS_WEBHOOK_URL` is set (create a "Post to a channel when a webhook request is received" workflow on the channel), and only lists them on the Alerts screen otherwise;
 - saves engineers' changes to Zammad, and the copilot leaves a changed field alone until it is undone;
+- can email a new ticket's client a few safe things to try, clearly labelled as AI, with a link to say it worked (see below);
 - writes every field change, note, alert, override and model run (with prompt version, model and cost) to the `audit_log` table in Postgres.
+
+## AI suggestion emails
+
+Off by default. When switched on, a new ticket's client gets one email, written by AI and labelled as such, with two to four safe steps to try while the named team has the ticket. It is never sent for P1 or P2, security, account access, lost device or request tickets, when the AI is unsure of the routing, or when the email looks like it is trying to instruct the AI. The steps are checked before sending (no links, no requests for passwords, codes or personal details, nothing needing admin rights) and the email is dropped if they fail.
+
+The email carries a signed, single-use link. It opens a page with a button, and only pressing it closes the ticket, so mail scanners cannot. The close is logged as the client's, the engineer is told, and the ticket reopens if the client writes again or the engineer reopens it. The dashboard shows how many suggestions clients marked as fixes.
+
+To switch it on, set `SUGGESTIONS_ENABLED`, `SUGGESTION_CLIENTS`, `SUGGESTION_EMAIL_TRANSPORT=smtp`, `SUGGESTION_LINK_SECRET` and `PUBLIC_URL`, then run `uv run python -m copilot.evaluation --judge` with your model. Nothing is sent until that run shows no suggestions drafted for tickets that must be skipped and the judge rates at least 98% of them safe. Keep `/fixed/` outside Cloudflare Access so clients can reach it.
 
 ## Evaluation
 

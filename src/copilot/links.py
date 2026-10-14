@@ -1,7 +1,9 @@
 """Signed, single-use "this fixed it" links in suggestion emails.
 
-A link carries the ticket, the requester's email address, the suggestion it
-belongs to and an expiry, signed with ``SUGGESTION_LINK_SECRET`` (HMAC-SHA256).
+A link carries the ticket, the suggestion it belongs to and an expiry, signed
+with ``SUGGESTION_LINK_SECRET`` (HMAC-SHA256). It holds no personal details: the
+requester it was sent to is in the audit log, and the link only works while the
+ticket's requester is still that person.
 Opening it only shows a page with a confirm button; pressing the button closes
 the ticket. Mail scanners that open links therefore cannot close tickets, and
 the audit log makes each link work once.
@@ -22,7 +24,6 @@ LIFETIME = timedelta(days=14)
 
 class FixedLink(BaseModel):
     ticket_id: str
-    requester: str
     suggestion_id: str
     expires: datetime
 
@@ -43,7 +44,6 @@ def _sign(secret: SecretStr, payload: str) -> str:
 def make_token(
     secret: SecretStr,
     ticket_id: str,
-    requester: str,
     suggestion_id: str,
     now: datetime | None = None,
 ) -> str:
@@ -52,7 +52,6 @@ def make_token(
         json.dumps(
             {
                 "t": ticket_id,
-                "r": requester.lower(),
                 "s": suggestion_id,
                 "e": int(expires.timestamp()),
             },
@@ -71,7 +70,6 @@ def read_token(secret: SecretStr, token: str, now: datetime | None = None) -> Fi
         data = json.loads(_unb64(payload))
         link = FixedLink(
             ticket_id=str(data["t"]),
-            requester=data["r"],
             suggestion_id=data["s"],
             expires=datetime.fromtimestamp(data["e"], UTC),
         )
