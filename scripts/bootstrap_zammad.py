@@ -5,7 +5,8 @@ Steps:
 2. Copy it into the running railsserver container and trigger the wizard.
 3. Deactivate Zammad's automatic replies to customers (the copilot never replies to
    clients, and nor should the demo ticket system).
-4. Create an API token for the copilot and print it, so it can go in .env.
+4. Thread follow-up emails onto their ticket by their References headers.
+5. Create an API token for the copilot and print it, so it can go in .env.
 
 Run once after `docker compose up -d --wait`:
 
@@ -176,6 +177,15 @@ def main() -> None:
         if trigger["name"].startswith("auto reply") and trigger["active"]:
             admin.request("PUT", f"/api/v1/triggers/{trigger['id']}", {"active": False})
             print(f"Deactivated trigger: {trigger['name']}")
+
+    # Thread follow-up emails onto their ticket using the References and
+    # In-Reply-To headers, not only a ticket number in the subject.
+    for setting in admin.request("GET", "/api/v1/settings"):
+        if setting["name"] == "postmaster_follow_up_search_in":
+            value = {"value": ["references", "subject_references"]}
+            if setting["state_current"] != value:
+                admin.request("PUT", f"/api/v1/settings/{setting['id']}", {"state_current": value})
+                print("Enabled follow-up detection by email references")
 
     if env.get("ZAMMAD_TOKEN"):
         print("ZAMMAD_TOKEN is already set; not creating another token.")
