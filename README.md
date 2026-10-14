@@ -4,7 +4,7 @@ An open-source AI assistant for MSP service desks that takes ticket admin off en
 
 Everything runs on synthetic data for a fictional MSP, **Northgate Managed Services**. The repository contains no real company, client or employee data.
 
-> Status: early development (Phase 4 of 8). A full README arrives in Phase 8.
+> Status: early development (Phase 5 of 8). A full README arrives in Phase 8.
 
 ## Quick start
 

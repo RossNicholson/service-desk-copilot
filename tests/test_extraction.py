@@ -56,11 +56,26 @@ def fake_note(user, invent=False):
     return note
 
 
+def fake_followup(user, frustration=1):
+    """Calls the newest email a chase if it asks for an update, unless there is no rush."""
+    newest = user.split("Newest email:", 1)[1].lower()
+    chase = "update" in newest and "no rush" not in newest
+    return {
+        "is_chase": chase,
+        "frustration": frustration if chase else 0,
+        "confidence": 0.9,
+        "reason": "Asks for an update." if chase else "Adds information.",
+    }
+
+
 class FakeModel:
     """Answers with the first person listed and a fixed route, and records each call."""
 
-    def __init__(self, route=1, impact=3, urgency=2, confidence=0.9, raw=None, invent=False):
+    def __init__(
+        self, route=1, impact=3, urgency=2, confidence=0.9, raw=None, invent=False, frustration=1
+    ):
         self.calls = []
+        self.frustration = frustration
         self.invent = invent
         self.answer = {"route": route, "impact": impact, "urgency": urgency}
         self.confidence = confidence
@@ -75,6 +90,8 @@ class FakeModel:
         user = kwargs["messages"][1]["content"]
         if kwargs["response_format"].__name__ == "NoteOut":
             return reply(fake_note(user, self.invent))
+        if kwargs["response_format"].__name__ == "FollowUp":
+            return reply(fake_followup(user, self.frustration))
         person = re.search(r"- (\[PERSON_\d+\]):", user)
         c = self.confidence
         return reply(
@@ -142,9 +159,13 @@ def test_one_call_per_inbound_email_with_previous_answer(directory, threads):
     fake = FakeModel()
     result = copilot(fake, directory).process(lt.thread, lt.labels.timing.observed_at)
     inbound = sum(m.direction == "inbound" for m in lt.labels.messages)
-    # Each inbound email costs one call for the fields and one for the note.
-    assert result.usage.calls == len(fake.calls) == 2 * inbound
-    assert result.usage.prompt_tokens == 200 * inbound
+    # Each inbound email costs one call for the fields and one for the note, and
+    # each follow-up one more for the chase check unless it is a plain resend.
+    kinds = [c["response_format"].__name__ for c in fake.calls]
+    assert kinds.count("ExtractedFields") == kinds.count("NoteOut") == inbound
+    assert kinds.count("FollowUp") <= inbound - 1
+    assert result.usage.calls == len(fake.calls)
+    assert result.usage.prompt_tokens == 100 * len(fake.calls)
     extract = [c for c in fake.calls if c["response_format"].__name__ == "ExtractedFields"]
     assert "- none yet" in extract[0]["messages"][1]["content"]
     assert "- route: 1" in extract[1]["messages"][1]["content"]

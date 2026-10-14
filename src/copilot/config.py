@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     spend_cap_usd: float = Field(default=5.0, ge=0)
     rate_limit_per_minute: int = Field(default=30, ge=1)
 
+    # How often the scheduled check-in re-reads open tickets and looks for silence.
+    checkin_interval_minutes: int = Field(default=5, ge=1)
+
     # Copilot database.
     database_url: SecretStr = SecretStr("postgresql://copilot:copilot@localhost:5432/copilot")
 
