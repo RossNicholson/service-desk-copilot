@@ -276,6 +276,22 @@ wheels = [
 ]
 
 [[package]]
+name = "fastapi"
+version = "0.135.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "annotated-doc" },
+    { name = "pydantic" },
+    { name = "starlette" },
+    { name = "typing-extensions" },
+    { name = "typing-inspection" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f7/e6/7adb4c5fa231e82c35b8f5741a9f2d055f520c29af5546fd70d3e8e1cd2e/fastapi-0.135.3.tar.gz", hash = "sha256:bd6d7caf1a2bdd8d676843cdcd2287729572a1ef524fc4d65c17ae002a1be654", size = 396524, upload-time = "2026-04-01T16:23:58.188Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/84/a4/5caa2de7f917a04ada20018eccf60d6cc6145b0199d55ca3711b0fc08312/fastapi-0.135.3-py3-none-any.whl", hash = "sha256:9b0f590c813acd13d0ab43dd8494138eb58e484bfac405db1f3187cfc5810d98", size = 117734, upload-time = "2026-04-01T16:23:59.328Z" },
+]
+
+[[package]]
 name = "fastuuid"
 version = "0.14.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1083,11 +1099,13 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "en-core-web-sm" },
+    { name = "fastapi" },
     { name = "litellm" },
     { name = "presidio-analyzer" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pyyaml" },
+    { name = "uvicorn" },
 ]
 
 [package.dev-dependencies]
@@ -1099,11 +1117,13 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "en-core-web-sm", url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" },
+    { name = "fastapi", specifier = "==0.135.3" },
     { name = "litellm", specifier = "==1.105.1" },
     { name = "presidio-analyzer", specifier = "==2.2.364" },
     { name = "pydantic", specifier = "==2.14.1" },
     { name = "pydantic-settings", specifier = "==2.15.0" },
     { name = "pyyaml", specifier = "==6.0.3" },
+    { name = "uvicorn", specifier = "==0.39.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -1233,6 +1253,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/dd/36/65d8713e975e861ad0b961b2ed26d53f15d720d588f12547114b6d40b95b/srsly-2.5.4-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:f3f59d68903fc23e34574eb978c88aba1a25ede9f5833582b94df9432bc137f4", size = 1204187, upload-time = "2026-09-27T20:15:27.329Z" },
     { url = "https://files.pythonhosted.org/packages/84/37/9889cfdc570ee7686f0b039be3b798fc2c05cbc0b9c3ad25e19a6d843861/srsly-2.5.4-cp312-cp312-win_amd64.whl", hash = "sha256:a287627f6d35f83b8e8df99b4c7f7068b3cf386d4c28fc4b257b226512568f91", size = 674274, upload-time = "2026-09-27T20:15:28.919Z" },
     { url = "https://files.pythonhosted.org/packages/e9/d2/eef41585d19e43ecb4d71dc216988c407c0b753a74758d08047b46ca1dd5/srsly-2.5.4-cp312-cp312-win_arm64.whl", hash = "sha256:d42e867817004670c7c234b72dd315298682abd1e16095e96673f8505021120d", size = 667586, upload-time = "2026-09-27T20:15:30.248Z" },
+]
+
+[[package]]
+name = "starlette"
+version = "1.8.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e9/0c/6efb252d091ecccd7d62048ae11f0ea35cd75a4fbaeea5e30f9c3bf91d10/starlette-1.8.0.tar.gz", hash = "sha256:1565dc0b35d5737a271ed1e0e04e949f4e81198799f216d2667b0a0fb9cf9522", size = 2730457, upload-time = "2026-10-13T07:54:39.53Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c1/b0/5742e4ac7af5eb58ec3470a537a49d7aa507e5539413e504b3a65ef50ba8/starlette-1.8.0-py3-none-any.whl", hash = "sha256:dfdd6b29c26483288088d990eee59631dedadd66ce20d203402a7ca8e3c4656f", size = 79612, upload-time = "2026-10-13T07:54:38.019Z" },
 ]
 
 [[package]]
@@ -1381,6 +1414,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz", hash = "sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63", size = 458972, upload-time = "2026-09-15T19:29:36.253Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl", hash = "sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3", size = 135717, upload-time = "2026-09-15T19:29:34.577Z" },
+]
+
+[[package]]
+name = "uvicorn"
+version = "0.39.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "h11" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ae/4f/f9fdac7cf6dd79790eb165639b5c452ceeabc7bbabbba4569155470a287d/uvicorn-0.39.0.tar.gz", hash = "sha256:610512b19baa93423d2892d7823741f6d27717b642c8964000d7194dded19302", size = 82001, upload-time = "2025-12-21T13:05:17.973Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6b/25/db2b1c6c35bf22e17fe5412d2ee5d3fd7a20d07ebc9dac8b58f7db2e23a0/uvicorn-0.39.0-py3-none-any.whl", hash = "sha256:7beec21bd2693562b386285b188a7963b06853c0d006302b3e4cfed950c9929a", size = 68491, upload-time = "2025-12-21T13:05:16.291Z" },
 ]
 
 [[package]]
