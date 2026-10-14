@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from copilot.baseline import BaselineCopilot, silence_alert
+from copilot.baseline import silence_alert
+from copilot.chasing import PROMPT_NAME as CHASE_PROMPT
+from copilot.chasing import ChaseDetector, chase_alerts, escalate_silence
 from copilot.directory import Directory, load_directory
 from copilot.extraction import PROMPT_NAME as EXTRACT_PROMPT
 from copilot.extraction import FieldExtractor
@@ -13,6 +15,7 @@ from copilot.notes import PROMPT_NAME as NOTE_PROMPT
 from copilot.notes import NoteWriter
 from copilot.redaction import Redactor
 from copilot.schemas import (
+    ChaseAssessment,
     FieldChange,
     FieldPrediction,
     StructuredNote,
@@ -26,8 +29,9 @@ class ModelCopilot:
     """The copilot as the harness scores it.
 
     For each inbound email the model proposes the ticket fields, then writes the
-    note. Chase detection and chase alerts still come from the baseline until
-    Phase 5; the silence alert uses the model's priority.
+    note. Each follow-up from the client is also checked for chasing. Alerts go
+    to the assigned engineer and escalate to the team lead by the rules in
+    `copilot.chasing`; the silence alert uses the model's priority.
     """
 
     name = "copilot"
@@ -37,7 +41,7 @@ class ModelCopilot:
         self.model = client or ModelClient()
         self.extractor = FieldExtractor(self.model, self.directory)
         self.notes = NoteWriter(self.model, self.directory)
-        self.baseline = BaselineCopilot(self.directory)
+        self.chases = ChaseDetector(self.model, self.directory)
 
     def process(self, thread: Thread, now: datetime) -> ThreadResult:
         d = self.directory
@@ -47,6 +51,7 @@ class ModelCopilot:
         current: dict[str, FieldPrediction] = {}
         changes: list[FieldChange] = []
         notes: list[StructuredNote] = []
+        assessed: list[tuple[ChaseAssessment, int]] = []
         raw = None
         for index, email in enumerate(thread.messages):
             if email.from_address == d.support_address:
@@ -65,12 +70,15 @@ class ModelCopilot:
             current = fields
             subcategory = fields["subcategory"].value
             notes.append(self.notes.write(thread, index, redactor, subcategory))
+            if index > 0:
+                assessed.append(self.chases.assess(thread, index, redactor))
 
-        rules = self.baseline.process(thread, now)
-        alerts = [a for a in rules.alerts if a.kind == "chase"]
-        silence = silence_alert(thread, current["priority"].value, now, d)
+        alerts = chase_alerts(thread, assessed, d.support_address)
+        priority = current["priority"].value
+        silence = silence_alert(thread, priority, now, d)
         if silence:
-            alerts.append(silence)
+            target = d.response_targets_minutes[str(priority)]
+            alerts.append(escalate_silence(silence, now, target))
         after = self.model.usage
         return ThreadResult(
             thread_id=thread.thread_id,
@@ -78,13 +86,13 @@ class ModelCopilot:
             fields=current,
             field_changes=changes,
             notes=notes,
-            chase_assessments=rules.chase_assessments,
+            chase_assessments=[a for a, _ in assessed],
             alerts=alerts,
             model_inputs=self.model.inputs[inputs_before:],
             usage=Usage(
                 provider=after.provider,
                 model=after.model,
-                prompt_version=f"{EXTRACT_PROMPT}+{NOTE_PROMPT}",
+                prompt_version=f"{EXTRACT_PROMPT}+{NOTE_PROMPT}+{CHASE_PROMPT}",
                 calls=after.calls - before.calls,
                 prompt_tokens=after.prompt_tokens - before.prompt_tokens,
                 completion_tokens=after.completion_tokens - before.completion_tokens,

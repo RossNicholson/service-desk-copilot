@@ -129,8 +129,7 @@ def chase_alerts(
         email = thread.messages[assessment.message_index]
         at = sent_at(email)
         replied_since = last_alert_at is not None and any(
-            e.from_address == support and last_alert_at <= sent_at(e) <= at
-            for e in thread.messages
+            e.from_address == support and last_alert_at <= sent_at(e) <= at for e in thread.messages
         )
         repeat = last_alert_at is not None and not replied_since
         escalate = repeat or frustration >= ESCALATE_FRUSTRATION
