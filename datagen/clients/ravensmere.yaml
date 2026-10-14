@@ -1,0 +1,178 @@
+# Fictional client of Northgate Managed Services. Not a real firm.
+id: ravensmere
+name: Ravensmere Wealth Partners
+short_name: Ravensmere
+sector: wealth management
+domain: ravensmere-wealth.example
+sites:
+- City office, London
+- Edinburgh office
+contract: premier
+disclaimer: Ravensmere Wealth Partners is authorised and regulated by the Financial Conduct Authority.
+  The value of investments can fall as well as rise. This message is confidential; if you have received
+  it in error please notify the sender and delete it.
+services:
+  email: Outlook and Exchange Online
+  teams: Microsoft Teams
+  sharepoint: SharePoint intranet
+  onedrive: OneDrive
+  office_apps: Microsoft 365 apps
+  mfa: Microsoft Authenticator MFA
+  accounts: User accounts
+  vpn: Remote access VPN
+  wifi: Office Wi-Fi
+  internet: Internet connection
+  laptop: Laptops
+  printer: Printers and scanners
+  mobile: Company mobiles
+  phone: Teams Phone
+  file_share: Shared drives
+  backup: Backups
+  security: Endpoint protection
+  lob_core: PortfolioView (portfolio management)
+  lob_crm: ClientVault CRM
+people:
+- id: ravensmere-01
+  first_name: Isla
+  last_name: Dunmore
+  email: isla.dunmore@ravensmere-wealth.example
+  role: Managing Partner
+  phone: 020 7946 0829
+  mobile: 07700 900066
+  vip: true
+  persona:
+    tone: formal
+    typo_rate: 0.04
+    mobile_share: 0.6
+- id: ravensmere-02
+  first_name: Sean
+  last_name: Ahmed
+  email: sean.ahmed@ravensmere-wealth.example
+  role: Partner
+  phone: null
+  mobile: null
+  vip: true
+  persona:
+    tone: anxious
+    typo_rate: 0.02
+    mobile_share: 0.3
+- id: ravensmere-03
+  first_name: Jack
+  last_name: MacLeod
+  email: jack.macleod@ravensmere-wealth.example
+  role: Senior Wealth Manager
+  phone: null
+  mobile: 07700 900073
+  vip: false
+  persona:
+    tone: formal
+    typo_rate: 0.02
+    mobile_share: 0.3
+- id: ravensmere-04
+  first_name: Farah
+  last_name: Rowntree
+  email: farah.rowntree@ravensmere-wealth.example
+  role: Wealth Manager
+  phone: 020 7946 0502
+  mobile: 07700 900080
+  vip: false
+  persona:
+    tone: anxious
+    typo_rate: 0.04
+    mobile_share: 0.1
+- id: ravensmere-05
+  first_name: Owen
+  last_name: Sandhu
+  email: owen.sandhu@ravensmere-wealth.example
+  role: Wealth Manager
+  phone: 020 7946 0871
+  mobile: 07700 900087
+  vip: false
+  persona:
+    tone: terse
+    typo_rate: 0.01
+    mobile_share: 0.6
+- id: ravensmere-06
+  first_name: Grace
+  last_name: Hadley
+  email: grace.hadley@ravensmere-wealth.example
+  role: Paraplanner
+  phone: 020 7946 0157
+  mobile: null
+  vip: false
+  persona:
+    tone: anxious
+    typo_rate: 0.02
+    mobile_share: 0.3
+- id: ravensmere-07
+  first_name: Stuart
+  last_name: Iqbal
+  email: stuart.iqbal@ravensmere-wealth.example
+  role: Paraplanner
+  phone: 020 7946 0342
+  mobile: 07700 900094
+  vip: false
+  persona:
+    tone: anxious
+    typo_rate: 0.04
+    mobile_share: 0.0
+- id: ravensmere-08
+  first_name: Aisha
+  last_name: Dunmore
+  email: aisha.dunmore@ravensmere-wealth.example
+  role: Client Services Executive
+  phone: null
+  mobile: 07700 900101
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.02
+    mobile_share: 0.1
+- id: ravensmere-09
+  first_name: Mohammed
+  last_name: Sinclair
+  email: mohammed.sinclair@ravensmere-wealth.example
+  role: Head of Compliance
+  phone: 020 7946 0974
+  mobile: 07700 900108
+  vip: false
+  persona:
+    tone: formal
+    typo_rate: 0.01
+    mobile_share: 0.0
+- id: ravensmere-10
+  first_name: Zara
+  last_name: Greaves
+  email: zara.greaves@ravensmere-wealth.example
+  role: Practice Manager
+  phone: 020 7946 0596
+  mobile: null
+  vip: false
+  persona:
+    tone: terse
+    typo_rate: 0.0
+    mobile_share: 0.1
+- id: ravensmere-11
+  first_name: Sean
+  last_name: Iqbal
+  email: sean.iqbal@ravensmere-wealth.example
+  role: Executive Assistant
+  phone: 020 7946 0529
+  mobile: 07700 900115
+  vip: false
+  persona:
+    tone: formal
+    typo_rate: 0.01
+    mobile_share: 0.3
+- id: ravensmere-12
+  first_name: Fiona
+  last_name: Rahman
+  email: fiona.rahman@ravensmere-wealth.example
+  role: Investment Analyst
+  phone: null
+  mobile: 07700 900122
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.0
+    mobile_share: 0.1

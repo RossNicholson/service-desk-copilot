@@ -1,0 +1,177 @@
+# Fictional client of Northgate Managed Services. Not a real firm.
+id: quillstone
+name: Quillstone Payments
+short_name: Quillstone
+sector: payments
+domain: quillstone-pay.example
+sites:
+- Manchester office
+- Remote
+contract: premier
+disclaimer: Quillstone Payments is authorised by the Financial Conduct Authority as an electronic money
+  institution. This message and any attachments are confidential.
+services:
+  email: Outlook and Exchange Online
+  teams: Microsoft Teams
+  sharepoint: SharePoint intranet
+  onedrive: OneDrive
+  office_apps: Microsoft 365 apps
+  mfa: Microsoft Authenticator MFA
+  accounts: User accounts
+  vpn: Remote access VPN
+  wifi: Office Wi-Fi
+  internet: Internet connection
+  laptop: Laptops
+  printer: Printers and scanners
+  mobile: Company mobiles
+  phone: Teams Phone
+  file_share: Shared drives
+  backup: Backups
+  security: Endpoint protection
+  lob_core: Settlement console
+  lob_crm: Merchant onboarding portal
+people:
+- id: quillstone-01
+  first_name: Patrick
+  last_name: Bailey
+  email: patrick.bailey@quillstone-pay.example
+  role: Chief Operating Officer
+  phone: null
+  mobile: 07700 900171
+  vip: true
+  persona:
+    tone: terse
+    typo_rate: 0.0
+    mobile_share: 0.6
+- id: quillstone-02
+  first_name: Eleanor
+  last_name: Mensah
+  email: eleanor.mensah@quillstone-pay.example
+  role: Head of Finance
+  phone: 0161 496 0018
+  mobile: null
+  vip: true
+  persona:
+    tone: terse
+    typo_rate: 0.04
+    mobile_share: 0.6
+- id: quillstone-03
+  first_name: Zara
+  last_name: Davies
+  email: zara.davies@quillstone-pay.example
+  role: Settlements Analyst
+  phone: 0161 496 0595
+  mobile: null
+  vip: false
+  persona:
+    tone: terse
+    typo_rate: 0.04
+    mobile_share: 0.1
+- id: quillstone-04
+  first_name: Amir
+  last_name: Akhtar
+  email: amir.akhtar@quillstone-pay.example
+  role: Settlements Analyst
+  phone: 0161 496 0386
+  mobile: 07700 900178
+  vip: false
+  persona:
+    tone: terse
+    typo_rate: 0.0
+    mobile_share: 0.6
+- id: quillstone-05
+  first_name: Owen
+  last_name: Zielinski
+  email: owen.zielinski@quillstone-pay.example
+  role: Risk Analyst
+  phone: 0161 496 0925
+  mobile: 07700 900185
+  vip: false
+  persona:
+    tone: terse
+    typo_rate: 0.0
+    mobile_share: 0.3
+- id: quillstone-06
+  first_name: Eleanor
+  last_name: Greaves
+  email: eleanor.greaves@quillstone-pay.example
+  role: Merchant Onboarding Specialist
+  phone: null
+  mobile: null
+  vip: false
+  persona:
+    tone: anxious
+    typo_rate: 0.01
+    mobile_share: 0.0
+- id: quillstone-07
+  first_name: Catriona
+  last_name: Greaves
+  email: catriona.greaves@quillstone-pay.example
+  role: Merchant Onboarding Specialist
+  phone: 0161 496 0699
+  mobile: null
+  vip: false
+  persona:
+    tone: terse
+    typo_rate: 0.04
+    mobile_share: 0.6
+- id: quillstone-08
+  first_name: Maria
+  last_name: Campbell
+  email: maria.campbell@quillstone-pay.example
+  role: Customer Support Lead
+  phone: null
+  mobile: null
+  vip: false
+  persona:
+    tone: terse
+    typo_rate: 0.0
+    mobile_share: 0.3
+- id: quillstone-09
+  first_name: Erin
+  last_name: Gallagher
+  email: erin.gallagher@quillstone-pay.example
+  role: Customer Support Agent
+  phone: 0161 496 0393
+  mobile: null
+  vip: false
+  persona:
+    tone: anxious
+    typo_rate: 0.02
+    mobile_share: 0.1
+- id: quillstone-10
+  first_name: Imran
+  last_name: Hartigan
+  email: imran.hartigan@quillstone-pay.example
+  role: Software Engineer
+  phone: 0161 496 0992
+  mobile: 07700 900192
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.04
+    mobile_share: 0.0
+- id: quillstone-11
+  first_name: Emeka
+  last_name: Thornton
+  email: emeka.thornton@quillstone-pay.example
+  role: People and Office Manager
+  phone: 0161 496 0132
+  mobile: null
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.0
+    mobile_share: 0.3
+- id: quillstone-12
+  first_name: Alice
+  last_name: Rowntree
+  email: alice.rowntree@quillstone-pay.example
+  role: MLRO
+  phone: 0161 496 0787
+  mobile: null
+  vip: false
+  persona:
+    tone: terse
+    typo_rate: 0.0
+    mobile_share: 0.0

@@ -1,0 +1,661 @@
+# Issue catalogue for the synthetic data generator.
+#
+# Each issue fixes the ground-truth category, subcategory, affected service and
+# assignment group. The text pieces are used by the template renderer and passed
+# to the model renderer as the facts it must convey. Placeholders in braces are
+# filled per thread: {service} {site} {device} {colleague} {error} {time} {day} {count} {file} and so on.
+#
+# details: specific facts a client may or may not mention. When a detail is left
+# out of a thread, its question becomes one of the note's expected open questions.
+
+- id: password-locked
+  category: Access and Identity
+  subcategory: Account locked
+  service: accounts
+  group: service-desk
+  short_description: User account locked out after password attempts
+  scopes: [single]
+  problems:
+    - "I've locked myself out of my account"
+    - "My login says my account is locked"
+    - "I can't log in, it keeps saying the account is locked out"
+  details:
+    - key: error
+      text: "The message says \"{error}\""
+      question: What is the exact error message?
+    - key: since
+      text: "It started at about {time}"
+      question: When did the lockout start?
+    - key: device
+      text: "I'm on my laptop {device}"
+      question: Which device is being used?
+  tried:
+    - "I've tried the self-service password reset but it says I'm not registered"
+    - "I waited half an hour in case it unlocked itself"
+    - "I restarted the laptop"
+  asks:
+    - "Please can you unlock it"
+    - "Can someone reset my password for me"
+
+- id: mfa-new-phone
+  category: Access and Identity
+  subcategory: Multi-factor authentication
+  service: mfa
+  group: identity
+  short_description: MFA prompts not reaching user's new phone
+  scopes: [single]
+  problems:
+    - "I've got a new phone and now the Authenticator app isn't getting the sign-in prompts"
+    - "My MFA has stopped working since I changed my mobile"
+    - "I can't approve sign-ins because my old phone is wiped"
+  details:
+    - key: phone
+      text: "The new phone is an {device}"
+      question: What make and model is the new phone?
+    - key: old_phone
+      text: "I've still got the old phone but it's been reset"
+      question: Does the user still have the old phone?
+    - key: since
+      text: "This has been going on since {day}"
+      question: When did the prompts stop arriving?
+  tried:
+    - "I've reinstalled the Authenticator app"
+    - "I tried adding the account again but it asks me to approve on the old phone"
+  asks:
+    - "Can you reset my MFA so I can set it up again"
+    - "Please re-register my new phone"
+
+- id: new-starter
+  category: Access and Identity
+  subcategory: New starter
+  service: accounts
+  group: service-desk
+  short_description: New starter account and laptop request
+  scopes: [single]
+  problems:
+    - "We have a new starter, {colleague}, joining us"
+    - "Please can you set up a new user, {colleague}"
+    - "Just a heads up that {colleague} starts with us soon and needs everything setting up"
+  details:
+    - key: start_date
+      text: "They start on {start_date}"
+      question: What is the new starter's start date?
+    - key: role
+      text: "They're joining as a {role}"
+      question: What is the new starter's job title and team?
+    - key: access
+      text: "They'll need the same access as {colleague_two}"
+      question: Whose access should the new starter mirror?
+    - key: kit
+      text: "They'll need a laptop and a headset"
+      question: What equipment does the new starter need?
+  tried: []
+  asks:
+    - "Can you create the account and get a laptop ready"
+    - "Please set them up with email, Teams and {service}"
+
+- id: leaver
+  category: Access and Identity
+  subcategory: Leaver
+  service: accounts
+  group: service-desk
+  short_description: Leaver account disable and mailbox handover
+  scopes: [single]
+  problems:
+    - "{colleague} is leaving us"
+    - "Unfortunately {colleague} has left the business today"
+    - "Please can you process a leaver for {colleague}"
+  details:
+    - key: last_day
+      text: "Their last day is {last_day}"
+      question: What is the leaver's last working day?
+    - key: mailbox
+      text: "Their emails should go to {colleague_two}"
+      question: Who should receive the leaver's mailbox and files?
+    - key: kit
+      text: "Their laptop {device} will be left with the office manager"
+      question: Where will the leaver's equipment be returned?
+  tried: []
+  asks:
+    - "Can you disable their account at the end of the day"
+    - "Please remove their access and forward their email"
+
+- id: shared-mailbox-access
+  category: Email and Collaboration
+  subcategory: Shared mailbox
+  service: email
+  group: identity
+  short_description: User needs access to a shared mailbox
+  scopes: [single, team]
+  problems:
+    - "I can't see the {mailbox} shared mailbox in Outlook any more"
+    - "I need access to the {mailbox} mailbox"
+    - "The {mailbox} inbox has disappeared from my Outlook"
+  details:
+    - key: approver
+      text: "{colleague} has approved this"
+      question: Who has approved the mailbox access?
+    - key: level
+      text: "I need to be able to send as the mailbox, not just read it"
+      question: Is read access enough or does the user need send-as?
+    - key: since
+      text: "It was there on {day}"
+      question: When was the mailbox last visible?
+  tried:
+    - "I've restarted Outlook"
+    - "I checked Outlook on the web and it's not there either"
+  asks:
+    - "Can you add me back"
+    - "Please give me access"
+
+- id: outlook-crash
+  category: Email and Collaboration
+  subcategory: Outlook
+  service: email
+  group: desktop
+  short_description: Outlook crashing on start-up
+  scopes: [single, team]
+  problems:
+    - "Outlook keeps crashing as soon as I open it"
+    - "Outlook won't open, it just closes itself"
+    - "Every time I start Outlook it freezes and then shuts down"
+  details:
+    - key: error
+      text: "I get a box saying \"{error}\""
+      question: What error message, if any, appears?
+    - key: since
+      text: "It started after the updates on {day}"
+      question: When did Outlook start crashing?
+    - key: device
+      text: "My laptop is {device}"
+      question: Which device is affected?
+  tried:
+    - "I've restarted my laptop twice"
+    - "I tried safe mode and that does open"
+    - "Outlook on the web works fine"
+  asks:
+    - "Can someone have a look"
+    - "Please can you fix it, I need my emails"
+
+- id: teams-meetings-audio
+  category: Email and Collaboration
+  subcategory: Teams
+  service: teams
+  group: desktop
+  short_description: No audio in Teams meetings
+  scopes: [single, team]
+  problems:
+    - "Nobody can hear me on Teams calls"
+    - "I can't hear anyone in Teams meetings"
+    - "Teams audio has stopped working"
+  details:
+    - key: headset
+      text: "I'm using the {device} headset"
+      question: Which headset or audio device is in use?
+    - key: since
+      text: "It was fine until {day}"
+      question: When did the audio stop working?
+  tried:
+    - "I've checked the headset works on my phone"
+    - "I've selected the headset in the Teams device settings"
+    - "I tried the Teams test call and it records nothing"
+  asks:
+    - "Can you take a look before my next meeting"
+    - "Please can someone help"
+
+- id: sharepoint-permissions
+  category: Email and Collaboration
+  subcategory: SharePoint and OneDrive
+  service: sharepoint
+  group: identity
+  short_description: Access denied to SharePoint site
+  scopes: [single, team]
+  problems:
+    - "I'm getting access denied on the {mailbox} SharePoint site"
+    - "I can't open the {mailbox} folder on SharePoint"
+    - "SharePoint is telling me I need to request access to the {mailbox} site"
+  details:
+    - key: link
+      text: "The link I'm using is https://intranet.{domain}/sites/{mailbox}"
+      question: Which site or link is affected?
+    - key: approver
+      text: "{colleague} owns the site and is happy for me to have access"
+      question: Who owns the site and has approved access?
+  tried:
+    - "I've clicked request access but nothing has happened"
+    - "I tried in a private browser window"
+  asks:
+    - "Can you sort out my access"
+    - "Please add me to the site"
+
+- id: laptop-wont-boot
+  category: Hardware
+  subcategory: Laptop
+  service: laptop
+  group: desktop
+  short_description: Laptop will not start
+  scopes: [single]
+  problems:
+    - "My laptop won't turn on"
+    - "My laptop is stuck on a black screen"
+    - "The laptop just shows the logo and then restarts"
+  details:
+    - key: device
+      text: "The asset tag is {device}"
+      question: What is the laptop's asset tag?
+    - key: lights
+      text: "The charging light comes on but nothing else"
+      question: Are there any lights or sounds when it is powered on?
+    - key: since
+      text: "It was fine when I shut it down on {day}"
+      question: When did the laptop last work?
+  tried:
+    - "I've tried a different charger"
+    - "I held the power button down for 30 seconds"
+    - "I've taken it off the docking station"
+  asks:
+    - "Can you send a replacement"
+    - "Please can someone look at it"
+
+- id: printer-offline
+  category: Hardware
+  subcategory: Printer
+  service: printer
+  group: desktop
+  short_description: Office printer offline
+  scopes: [team, site]
+  problems:
+    - "The printer at {site} is showing as offline"
+    - "Nobody at {site} can print"
+    - "The main printer has stopped working again"
+  details:
+    - key: error
+      text: "The printer screen says \"{error}\""
+      question: What does the printer's display show?
+    - key: since
+      text: "It stopped working at about {time}"
+      question: When did printing stop?
+    - key: count
+      text: "There are {count} of us using it"
+      question: How many people are affected?
+  tried:
+    - "We've turned it off and on again"
+    - "I checked it has paper and toner"
+    - "We tried printing from a different laptop"
+  asks:
+    - "Can you get it working"
+    - "Please can an engineer come out"
+
+- id: monitor-dock
+  category: Hardware
+  subcategory: Monitors and peripherals
+  service: laptop
+  group: desktop
+  short_description: External monitors not detected through dock
+  scopes: [single]
+  problems:
+    - "My screens aren't working when I plug into the dock"
+    - "My second monitor isn't being detected"
+    - "The docking station isn't showing anything on my monitors"
+  details:
+    - key: device
+      text: "My laptop is {device}"
+      question: Which laptop and dock are being used?
+    - key: desk
+      text: "I'm hot desking at {site} today"
+      question: Which desk or location is the dock at?
+  tried:
+    - "I've unplugged and replugged everything"
+    - "The laptop screen works fine"
+  asks:
+    - "Can you help me get them working"
+    - "Can someone check the dock"
+
+- id: vpn-connect
+  category: Network
+  subcategory: VPN
+  service: vpn
+  group: network
+  short_description: Unable to connect to VPN from home
+  scopes: [single, team]
+  problems:
+    - "I can't connect to the VPN from home"
+    - "The VPN keeps disconnecting every few minutes"
+    - "The VPN says it's connected but I can't get to anything"
+  details:
+    - key: error
+      text: "The error says \"{error}\""
+      question: What error does the VPN client show?
+    - key: home
+      text: "My home broadband is working fine for everything else"
+      question: Is the user's home internet otherwise working?
+    - key: since
+      text: "It last worked on {day}"
+      question: When did the VPN last work?
+  tried:
+    - "I've restarted my router"
+    - "I've rebooted the laptop"
+    - "I tried tethering to my phone and got the same thing"
+  asks:
+    - "Can you look into it"
+    - "Please can you help me get connected"
+
+- id: internet-outage
+  category: Network
+  subcategory: Internet outage
+  service: internet
+  group: network
+  short_description: Internet down at client site
+  scopes: [site]
+  problems:
+    - "The internet is down at {site}"
+    - "We've got no internet at {site}"
+    - "Nothing online is working at {site}"
+  details:
+    - key: since
+      text: "It went at about {time}"
+      question: When did the connection drop?
+    - key: lights
+      text: "The router has a red light on it"
+      question: What lights are showing on the router?
+    - key: count
+      text: "All {count} of us here are affected"
+      question: How many people at the site are affected?
+  tried:
+    - "We've turned the router off and on"
+    - "Mobile data works so it's just the office"
+  asks:
+    - "Please can you get it back up urgently"
+    - "Can you chase the line provider"
+
+- id: wifi-slow
+  category: Network
+  subcategory: Wi-Fi
+  service: wifi
+  group: network
+  short_description: Office Wi-Fi slow and dropping
+  scopes: [team, site]
+  problems:
+    - "The Wi-Fi at {site} is really slow"
+    - "The Wi-Fi keeps dropping out"
+    - "Wi-Fi in the meeting rooms is unusable"
+  details:
+    - key: area
+      text: "It's worst in the meeting rooms on the first floor"
+      question: Which part of the office is affected?
+    - key: since
+      text: "It's been like this since {day}"
+      question: When did the Wi-Fi problems start?
+  tried:
+    - "Plugging into the network cable works fine"
+    - "I've forgotten the network and reconnected"
+  asks:
+    - "Can someone look into it"
+    - "Please can you check the access points"
+
+- id: lob-app-error
+  category: Software
+  subcategory: Business application
+  service: lob_core
+  group: applications
+  short_description: Error when saving records in line-of-business application
+  scopes: [single, team, site]
+  problems:
+    - "{service} is throwing an error when I try to save"
+    - "{service} won't let me submit anything"
+    - "{service} is really slow and then times out"
+  details:
+    - key: error
+      text: "The error is \"{error}\""
+      question: What is the exact error message in the application?
+    - key: record
+      text: "It happens on case {reference}"
+      question: Does it affect one record or all of them?
+    - key: since
+      text: "It started around {time}"
+      question: When did the errors start?
+  tried:
+    - "I've logged out and back in"
+    - "{colleague} gets the same thing on their machine"
+    - "I cleared my browser cache"
+  asks:
+    - "Can you look at this as a priority"
+    - "Please can you contact the software supplier if needed"
+
+- id: crm-sync
+  category: Software
+  subcategory: Business application
+  service: lob_crm
+  group: applications
+  short_description: Records missing from CRM
+  scopes: [single, team]
+  problems:
+    - "{service} isn't showing records we added yesterday"
+    - "Some records have gone missing from {service}"
+    - "I can't find a record in {service} that I know is there"
+  details:
+    - key: record
+      text: "For example {reference}"
+      question: Which record or reference is missing?
+    - key: since
+      text: "I last saw it on {day}"
+      question: When was the record last visible?
+  tried:
+    - "I've searched by name and by reference"
+    - "{colleague} can't see it either"
+  asks:
+    - "Can you check whether it has been deleted"
+    - "Please can you find out what has happened"
+
+- id: software-install
+  category: Software
+  subcategory: Install request
+  service: office_apps
+  group: service-desk
+  short_description: Software installation request
+  scopes: [single]
+  problems:
+    - "Please can I have {software} installed"
+    - "I need {software} for a project"
+    - "Could you install {software} on my laptop"
+  details:
+    - key: device
+      text: "My laptop is {device}"
+      question: Which device should the software be installed on?
+    - key: approver
+      text: "{colleague} has signed this off"
+      question: Who has approved the installation?
+    - key: licence
+      text: "We already have a licence for it"
+      question: Is a licence already held or does one need buying?
+  tried: []
+  asks:
+    - "Can you install it when you get a chance"
+    - "Please let me know if you need anything else"
+
+- id: excel-file-corrupt
+  category: Software
+  subcategory: Microsoft 365 apps
+  service: office_apps
+  group: desktop
+  short_description: Excel file will not open, reports corruption
+  scopes: [single, team]
+  problems:
+    - "The spreadsheet {file} won't open"
+    - "Excel says {file} is corrupt"
+    - "I can't open {file}, it just hangs"
+  details:
+    - key: error
+      text: "It says \"{error}\""
+      question: What does Excel say when the file is opened?
+    - key: location
+      text: "It's saved on the {mailbox} SharePoint site"
+      question: Where is the file stored?
+    - key: since
+      text: "It opened fine on {day}"
+      question: When did the file last open correctly?
+  tried:
+    - "I tried opening it on {colleague}'s machine"
+    - "I tried Excel online and it says the same"
+  asks:
+    - "Can you restore an older version"
+    - "Please can you recover it"
+
+- id: phishing-report
+  category: Security
+  subcategory: Phishing report
+  service: security
+  group: security
+  short_description: Suspected phishing email reported
+  scopes: [single, team]
+  problems:
+    - "I've had a dodgy email asking me to log in to view a document"
+    - "I think I've received a phishing email"
+    - "Several of us have had a strange email pretending to be from our bank"
+  details:
+    - key: clicked
+      text: "I clicked the link but didn't enter anything"
+      question: Did anyone click the link or enter details?
+    - key: sender
+      text: "It came from billing@{bad_domain}"
+      question: What address was the email sent from?
+    - key: when
+      text: "It arrived at {time}"
+      question: When did the email arrive?
+  tried:
+    - "I've not replied to it"
+    - "I used the report button in Outlook"
+  asks:
+    - "Can you check it out"
+    - "Please can you block it for everyone"
+
+- id: suspicious-signin
+  category: Security
+  subcategory: Suspicious sign-in
+  service: accounts
+  group: security
+  short_description: Unexpected MFA prompts, possible account compromise
+  scopes: [single]
+  problems:
+    - "I keep getting MFA prompts I didn't ask for"
+    - "I've had an alert saying someone signed in to my account from abroad"
+    - "My phone keeps asking me to approve sign-ins and it isn't me"
+  details:
+    - key: approved
+      text: "I accidentally approved one of them"
+      question: Has the user approved any of the unexpected prompts?
+    - key: when
+      text: "They started at {time}"
+      question: When did the prompts start?
+    - key: count
+      text: "I've had about {count} of them"
+      question: How many prompts has the user received?
+  tried:
+    - "I've denied all of them"
+    - "I changed my password"
+  asks:
+    - "Is my account safe"
+    - "Please can you check and lock it down if needed"
+
+- id: lost-device
+  category: Security
+  subcategory: Lost device
+  service: mobile
+  group: security
+  short_description: Company phone lost or stolen
+  scopes: [single]
+  problems:
+    - "I've lost my work phone"
+    - "My company mobile was stolen"
+    - "I think I left my work phone on the train"
+  details:
+    - key: when
+      text: "I last had it at {time}"
+      question: When and where was the phone last seen?
+    - key: locked
+      text: "It has a PIN on it"
+      question: Was the phone protected with a PIN?
+    - key: device
+      text: "It's the {device}"
+      question: Which phone model was lost?
+  tried:
+    - "I've rung it and it goes to voicemail"
+    - "I've reported it to the police"
+  asks:
+    - "Can you wipe it"
+    - "Please can I get a replacement"
+
+- id: desk-phone
+  category: Telephony
+  subcategory: Phone system
+  service: phone
+  group: telephony
+  short_description: Inbound calls not ringing through
+  scopes: [single, team, site]
+  problems:
+    - "Calls to the main number aren't coming through"
+    - "Our phones aren't ringing"
+    - "Customers say they're getting a busy tone when they ring us"
+  details:
+    - key: number
+      text: "It's the number {office_phone}"
+      question: Which phone number or queue is affected?
+    - key: since
+      text: "It started at {time}"
+      question: When did calls stop coming through?
+  tried:
+    - "Outbound calls work fine"
+    - "We've signed out of Teams and back in"
+  asks:
+    - "Please can you look at this urgently"
+    - "Can you divert calls to a mobile in the meantime"
+
+- id: file-restore
+  category: Infrastructure
+  subcategory: Backup and restore
+  service: backup
+  group: infrastructure
+  short_description: Request to restore deleted folder
+  scopes: [single, team]
+  problems:
+    - "I've accidentally deleted a folder from the shared drive"
+    - "A whole folder has disappeared from the {mailbox} shared drive"
+    - "Someone has overwritten {file} and we need the old one back"
+  details:
+    - key: path
+      text: "It was in S:\\{mailbox}\\{file}"
+      question: What is the full path of the missing data?
+    - key: when
+      text: "It was definitely there on {day}"
+      question: When was the data last known to be correct?
+  tried:
+    - "I've checked the recycle bin"
+    - "I've looked in previous versions but there's nothing there"
+  asks:
+    - "Can you restore it from backup"
+    - "Please can you get it back"
+
+- id: shared-drive-slow
+  category: Infrastructure
+  subcategory: File share
+  service: file_share
+  group: infrastructure
+  short_description: Shared drive slow or unavailable
+  scopes: [team, site]
+  problems:
+    - "The shared drive is really slow today"
+    - "We can't get to the S: drive"
+    - "Opening anything on the shared drive takes ages"
+  details:
+    - key: since
+      text: "It's been like this since {day}"
+      question: When did the shared drive slow down?
+    - key: count
+      text: "About {count} people have mentioned it"
+      question: How many people are affected?
+  tried:
+    - "I've restarted my laptop"
+    - "Files on my desktop open fine"
+  asks:
+    - "Can you see what's going on"
+    - "Please can you look at the server"

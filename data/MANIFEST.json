@@ -1,0 +1,79 @@
+{
+  "splits": {
+    "dev": {
+      "count": 200,
+      "seed": 2026,
+      "messages": 505,
+      "clients": {
+        "brackenfold": 40,
+        "fernwick": 40,
+        "harbourline": 40,
+        "quillstone": 40,
+        "ravensmere": 40
+      },
+      "traits": {
+        "forwarded": 40,
+        "multi_issue": 20,
+        "chasing": 30,
+        "false_alarm": 10,
+        "silence": 20,
+        "adversarial": 16,
+        "pii_heavy": 30
+      },
+      "priorities": {
+        "P1": 5,
+        "P2": 20,
+        "P3": 46,
+        "P4": 81,
+        "P5": 48
+      },
+      "renderer": "template",
+      "model": null,
+      "prompt_version": null,
+      "cost_usd": 0.0
+    },
+    "test": {
+      "count": 100,
+      "seed": 7341,
+      "messages": 237,
+      "clients": {
+        "brackenfold": 20,
+        "fernwick": 20,
+        "harbourline": 20,
+        "quillstone": 20,
+        "ravensmere": 20
+      },
+      "traits": {
+        "forwarded": 20,
+        "multi_issue": 10,
+        "chasing": 15,
+        "false_alarm": 5,
+        "silence": 10,
+        "adversarial": 8,
+        "pii_heavy": 15
+      },
+      "priorities": {
+        "P1": 4,
+        "P2": 10,
+        "P3": 24,
+        "P4": 25,
+        "P5": 37
+      },
+      "renderer": "template",
+      "model": null,
+      "prompt_version": null,
+      "cost_usd": 0.0
+    }
+  },
+  "inputs": {
+    "datagen/clients/brackenfold.yaml": "aeebec11c6ca6075",
+    "datagen/clients/fernwick.yaml": "bde6e7271830bfa5",
+    "datagen/clients/harbourline.yaml": "ef7b4fb7064ac7f5",
+    "datagen/clients/quillstone.yaml": "8bf43a45a80d7763",
+    "datagen/clients/ravensmere.yaml": "e459d8ca19a2be93",
+    "datagen/prompts/render_thread.v1.md": "210854fab3d6ffbf",
+    "datagen/scenarios/mix.yaml": "56ebbeea65828b49",
+    "datagen/world/issues.yaml": "affae831612f0756",
+    "datagen/world/northgate.yaml": "1a29f67e2a10a114"
+  }
+}
