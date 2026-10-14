@@ -1,0 +1,89 @@
+# What the service desk usually needs to know before it can work a ticket, by
+# subcategory. Written by Northgate's desk as a triage checklist. The note writer
+# turns any item the client's emails do not answer into an open question.
+#
+# Every ticket also gets the "always" questions when the emails do not answer them.
+
+always:
+  - How many people are affected?
+  - Is there a deadline or business impact?
+
+Account locked:
+  - Which account or system is locked?
+  - What message appears when signing in?
+Multi-factor authentication:
+  - Which device is the authenticator app on?
+  - When did the prompts stop working or start appearing?
+  - What error, if any, appears?
+New starter:
+  - What is the new starter's start date?
+  - What is their job title and team?
+  - What equipment and access do they need?
+  - Do they need a licence buying?
+Leaver:
+  - What is the leaver's last day?
+  - Who should receive their mailbox and files?
+  - Where will their equipment be returned?
+Shared mailbox:
+  - Which shared mailbox is it?
+  - Who needs access, and what level?
+Outlook:
+  - What error message appears?
+  - When did it start?
+  - Is it the desktop app, web or phone?
+Teams:
+  - Is it calls, meetings, chat or audio?
+  - Which device is being used?
+SharePoint and OneDrive:
+  - Which site, library or file is it?
+  - What error appears?
+Laptop:
+  - Which laptop is affected (asset tag or model)?
+  - What happens when it is switched on?
+Printer:
+  - Which printer is it, and where is it?
+  - What does the printer's display show?
+  - When did printing stop?
+Monitors and peripherals:
+  - Which laptop, dock and screens are being used?
+  - What happens when the device is connected?
+VPN:
+  - What error does the VPN client show?
+  - When did the VPN last work?
+  - Is the home internet otherwise working?
+Internet outage:
+  - Which site is affected?
+  - Are the router lights on, and what colour?
+Wi-Fi:
+  - Which site and which part of the building?
+  - Does a wired connection work?
+Business application:
+  - What error message appears?
+  - Which record or screen is affected?
+  - When did it last work?
+Install request:
+  - What software is needed, and on which device?
+  - Is a licence already held?
+Microsoft 365 apps:
+  - Which app and which file?
+  - What error message appears?
+Phishing report:
+  - When did the email arrive?
+  - Was a link clicked or an attachment opened?
+  - Were any details entered?
+Suspicious sign-in:
+  - When did the unexpected sign-in or prompt happen?
+  - Has the password been changed since?
+Lost device:
+  - When and where was the device last seen?
+  - Was it protected with a PIN or password?
+  - Is a replacement needed?
+Phone system:
+  - Which phone number or queue is affected?
+  - What do callers hear?
+Backup and restore:
+  - What is the full path of the missing data?
+  - When was it last known to be correct?
+File share:
+  - Which drive or folder is it?
+  - What error appears?
