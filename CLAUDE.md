@@ -61,10 +61,11 @@ Agreed with Ross (14 October 2026), changing the original rule that the AI never
 
 - **British English** in all docs, comments and UI text (colour, organisation, licence as a noun, prioritise).
 - **No em dashes** anywhere: docs, comments, UI text, prompts or commit messages. Use commas, colons, brackets or separate sentences.
-- Work one phase at a time. At the end of each phase, run the tests, summarise what was built and what is next, and stop for review.
+- **Decide and carry on** (Ross, 14 October 2026). Make the design and implementation calls yourself and work through the phases in order without stopping for review after each one. Keep one PR per phase, stacked on the previous phase, with CI green, and summarise each phase in its PR.
+- Only come to Ross for what only he can do: merging PRs, API keys or tokens, spending money (such as the VPS), steps in the Cloudflare or GitHub dashboards, and anything public or hard to undo. Report milestones and blockers only.
 - Commit in small, clearly described steps.
 - Never commit secrets. Settings live in `.env` (git-ignored), documented in `.env.example`. Secrets are `SecretStr` in `Settings`.
-- **Ask before adding any dependency** not already in `pyproject.toml` or `docker-compose.yml`.
+- Choose well-known, maintained dependencies yourself, pin them, and list any new ones in the PR description.
 
 ## UI design direction
 
