@@ -10,12 +10,23 @@ from copilot.baseline import BaselineCopilot
 from copilot.directory import load_directory
 from copilot.evaluation.dataset import LabelledThread, load_split
 from copilot.evaluation.metrics import all_metrics
+from copilot.extraction import ModelCopilot
+from copilot.llm import SpendCapReached, model_configured
 from copilot.schemas import ThreadResult
 
-# Every system the harness knows how to build. Later phases add the copilot here.
+# Every system the harness knows how to build. The copilot needs a model, so it only
+# runs when one is configured (see `available_systems`).
 SYSTEMS: dict[str, Callable[[], object]] = {
     "baseline": BaselineCopilot,
+    "copilot": ModelCopilot,
 }
+NEEDS_MODEL = {"copilot"}
+
+
+def available_systems() -> list[str]:
+    """Systems that can run now, baseline first."""
+    ready = model_configured()
+    return [n for n in SYSTEMS if n not in NEEDS_MODEL or ready]
 
 
 @dataclass
@@ -34,6 +45,9 @@ def run_system(name: str, threads: list[LabelledThread]) -> SystemRun:
     for lt in threads:
         try:
             result = system.process(lt.thread, now=lt.labels.timing.observed_at)
+        except SpendCapReached as error:
+            errors.append(f"{lt.thread.thread_id}: stopped, {error}")
+            break
         except Exception as error:  # a crash on one thread should not hide the rest
             errors.append(f"{lt.thread.thread_id}: {type(error).__name__}: {error}")
             result = ThreadResult(thread_id=lt.thread.thread_id, system=name, fields={})

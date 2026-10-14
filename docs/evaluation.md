@@ -67,12 +67,28 @@ Only the harness reads `data/test/`. A test fails if anything else under `src/` 
 | PII | leakage rate, per type | Share of the personal values in a thread found in the text the system sent to a model. "n/a" when nothing was sent |
 | Cost | per ticket | Mean cost in US dollars, model calls and tokens per thread |
 
+### Redaction
+
+A separate table scores the redactor on its own, over every email in the split, with no model involved. It runs on every harness run, including in CI.
+
+| Metric | Meaning |
+|---|---|
+| leakage rate, per type | Share of the labelled personal values still present after redaction |
+| details kept | Share of the words in the labelled facts (other than personal values) that survive redaction. A low number means the redactor is removing things engineers need |
+| seconds per thread | Time to redact a whole thread |
+
 ### Known limits
 
 - Note scores are lexical. They catch missing facts and obvious inventions cheaply, but not paraphrase. Phase 4 adds a model-graded judge alongside them.
 - Escalation is the only labelled check-in event for now. Engineers would also want fields corrected when a missing detail arrives; those changes count against precision until they are labelled.
 - Response targets are wall-clock minutes.
 - The committed data is template-rendered, so wording is more regular than real email. Expect lower scores on model-rendered data.
+
+## The copilot
+
+`src/copilot/extraction.py` registers as `copilot`. It needs a model, so the harness only runs it when `LLM_API_KEY` (or `LLM_API_BASE` for a local model) is set; otherwise it prints that only the baseline ran. Asking for it with `--system copilot` and no model exits with an error rather than silently skipping it. A run is limited by `SPEND_CAP_USD` and `RATE_LIMIT_PER_MINUTE`; hitting the cap stops the run and marks it as failed.
+
+In Phase 3 the copilot's fields and check-in updates come from the model, one call per inbound email. Its notes, chase detection and chase alerts are still the baseline's until Phases 4 and 5, so those rows match the baseline; its silence alert uses its own priority.
 
 ## The baseline
 

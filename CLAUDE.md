@@ -51,6 +51,10 @@ Service Desk Copilot is an open-source portfolio project: an AI assistant for MS
 - Never commit secrets. Settings live in `.env` (git-ignored), documented in `.env.example`. Secrets are `SecretStr` in `Settings`.
 - **Ask before adding any dependency** not already in `pyproject.toml` or `docker-compose.yml`.
 
+## UI design direction
+
+Agreed with Ross for the copilot's own screens (override UI, settings, demo pages): an admin dashboard layout with a coloured left sidebar and a rounded highlight on the active item, white rounded cards with soft shadows, a row of coloured stat tiles, line and bar charts, and tables with rounded status pills. Use **pastel colours** throughout, not saturated ones. Take the style only: no assets, fonts, logos or names from any third-party template.
+
 ## Synthetic data rules
 
 The repository is public, so generated data must be verifiably fictional:
@@ -67,6 +71,14 @@ The repository is public, so generated data must be verifiably fictional:
 - `data/test/` is held out for scoring only. **Never read, inspect or tune against `data/test/`** outside the evaluation harness. A test (`tests/test_data_isolation.py`) fails if code under `src/` references it.
 - Each thread's scenario spec is its ground truth label set. The format is in `src/copilot/evaluation/dataset.py`; bump `LABEL_FORMAT` when it changes incompatibly.
 - Every system implements `process(thread, now) -> ThreadResult` (`src/copilot/schemas.py`) and is registered in `src/copilot/evaluation/harness.py`. Report changes as harness numbers against the baseline. See `docs/evaluation.md`.
+
+## Models and personal data
+
+- All model calls go through `copilot.llm.ModelClient.complete`, which only accepts `Redacted` text. Wrap only `copilot.redaction.Redactor` output in `Redacted`.
+- Email text goes inside `email_block` tags with the call's nonce. Never put email text in the system prompt.
+- Prompts live in `src/copilot/prompts/<name>.v<N>.md`. Change the version in the file name when a change could move the scores, and report the harness numbers.
+- Values a model returns are checked against the options it was given. Anything else is dropped and flagged for review.
+- Never call a real model from tests. Use a fake `completion` (see `tests/test_extraction.py`).
 
 ## Commands
 

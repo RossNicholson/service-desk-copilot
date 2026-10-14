@@ -12,6 +12,7 @@ invented details cheaply; Phase 4 adds a model-graded judge alongside it.
 
 from __future__ import annotations
 
+import time
 from collections.abc import Sequence
 from statistics import mean
 
@@ -286,6 +287,48 @@ def cost_metrics(pairs: Pairs) -> dict[str, float | None]:
             r.usage.prompt_tokens + r.usage.completion_tokens for _, r in pairs
         ),
     }
+
+
+def redaction_metrics(threads: Sequence[LabelledThread]) -> dict[str, float | None]:
+    """How well the redactor alone does, on every email of every thread.
+
+    Leakage is the share of labelled personal values still present after
+    redaction. Details kept is the share of the labelled facts' words (other than
+    personal values) that survive, so over-redaction shows up too.
+    """
+    from copilot.directory import load_directory
+    from copilot.redaction import Redactor
+
+    directory = load_directory()
+    leaked = total = kept = words = 0
+    by_type: dict[str, list[int]] = {}
+    started = time.monotonic()
+    for lt in threads:
+        redactor = Redactor(directory=directory)
+        text = "\n".join(redactor.redact(f"{e.subject}\n{e.body}") for e in lt.thread.messages)
+        lowered = text.lower()
+        for item in lt.labels.pii:
+            hit = item.value.lower() in lowered
+            leaked += hit
+            total += 1
+            counts = by_type.setdefault(item.type, [0, 0])
+            counts[0] += hit
+            counts[1] += 1
+        personal = {t for item in lt.labels.pii for t in tokens(item.value)}
+        present = set(tokens(text))
+        for fact in _expected_facts(lt):
+            for token in set(tokens(fact)) - personal:
+                words += 1
+                kept += token in present
+    seconds = time.monotonic() - started
+    out = {
+        "redaction.leakage_rate": _rate(leaked, total),
+        "redaction.details_kept": _rate(kept, words),
+        "redaction.seconds_per_thread": _rate(seconds, len(threads)),
+    }
+    for kind, (hit, n) in sorted(by_type.items()):
+        out[f"redaction.leakage_{kind}"] = _rate(hit, n)
+    return out
 
 
 def all_metrics(pairs: Pairs, support_address: str) -> dict[str, float | None]:
