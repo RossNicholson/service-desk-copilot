@@ -509,42 +509,41 @@ function evaluation() {
 
 function settingsPage() {
   const s = SETTINGS;
-  const providers = [["anthropic", "Anthropic"], ["openai", "OpenAI"], ["azure", "Azure OpenAI"], ["gemini", "Google"], ["bedrock", "AWS Bedrock"], ["ollama", "Local (Ollama)"]];
+  const providers = { anthropic: "Anthropic", openai: "OpenAI", azure: "Azure OpenAI", gemini: "Google", bedrock: "AWS Bedrock", ollama: "Local (Ollama)" };
+  const row = (label, value, hint = "") => `<dt>${label}</dt><dd>${value}${hint ? `<small>${hint}</small>` : ""}</dd>`;
+  const yes = (on, text, off) => (on ? `<span class="pill ok">${text}</span>` : `<span class="pill muted">${off}</span>`);
   return `
+  <div class="banner">Settings are read from <code>.env</code> (see <code>.env.example</code>). Change them there and restart the app. Secrets are never shown here or sent to the browser.</div>
   <section class="card">
     <div class="card-head"><h2>AI provider</h2>
-      <span class="status-line">${s.model_configured ? '<span class="pill ok">Model ready</span>' : '<span class="pill review">No model configured</span>'}
-      ${s.api_key_set ? '<span class="pill ok">API key saved</span>' : '<span class="pill muted">No API key</span>'}</span>
+      <span class="status-line">${s.model_configured ? '<span class="pill ok">Model ready</span>' : '<span class="pill review">No model configured</span>'}</span>
     </div>
-    <form class="form" id="settings-form">
-      <label for="set-provider">Provider<span>Any provider LiteLLM supports</span>
-        <select id="set-provider">${providers.map(([v, l]) => `<option value="${v}" ${s.provider === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
-      <label for="set-model">Model<span>A cheap, fast model is the default</span><input id="set-model" value="${esc(s.model)}"></label>
-      <label for="set-key">API key<span>Write only. The key is never shown again or sent to the browser.</span>
-        <input id="set-key" type="password" autocomplete="off" placeholder="${s.api_key_set ? "A key is saved. Type to replace it." : "Paste your key"}"></label>
-      <label for="set-base">Endpoint<span>For Azure OpenAI or a local Ollama server</span><input id="set-base" value="${esc(s.api_base || "")}" placeholder="Optional"></label>
-    </form>
+    <dl class="facts">
+      ${row("Provider", esc(providers[s.provider] || s.provider), "LLM_MODEL. Any provider LiteLLM supports")}
+      ${row("Model", `<code>${esc(s.model)}</code>`, "A cheap, fast model is the default")}
+      ${row("API key", yes(s.api_key_set, "Set", "Not set"), "LLM_API_KEY")}
+      ${row("Endpoint", esc(s.api_base || "Provider default"), "LLM_API_BASE, for Azure OpenAI or Ollama")}
+    </dl>
   </section>
   <section class="card">
     <div class="card-head"><h2>Limits and alerts</h2></div>
-    <form class="form">
-      <label for="set-cap">Spending cap (US dollars)<span>The copilot stops calling the model when this is reached</span><input id="set-cap" type="number" min="0" step="0.5" value="${s.spend_cap_usd}"></label>
-      <label for="set-rate">Model calls per minute<input id="set-rate" type="number" min="1" value="${s.rate_limit_per_minute}"></label>
-      <label for="set-review">Flag fields below this confidence<input id="set-review" type="number" min="0" max="1" step="0.05" value="0.6"></label>
-      <label for="set-teams">Teams webhook<span>Where chasing and silence alerts go</span><input id="set-teams" placeholder="https://..." autocomplete="off"></label>
-    </form>
-  </section>
-  <section class="card">
-    <div class="card-head"><h2>AI suggestion emails</h2>${s.suggestions?.enabled ? '<span class="pill ok">On</span>' : '<span class="pill muted">Off</span>'}</div>
-    <p class="muted">A new ticket's client can get a few safe things to try while an engineer has it, clearly labelled as AI, with a button to say it is fixed. Skipped for P1 and P2, security, account access and lost devices.</p>
     <dl class="facts">
-      <dt>Clients</dt><dd>${esc(s.suggestions?.clients ?? "none")}</dd>
-      <dt>Sending</dt><dd>${esc(s.suggestions?.transport ?? "off")}</dd>
-      <dt>Confirm link secret</dt><dd>${s.suggestions?.link_secret_set ? "Set" : "Not set"}</dd>
-      <dt>Harness</dt><dd>${esc(s.suggestions?.harness ?? "Not run")}</dd>
+      ${row("Spending cap", `$${Number(s.spend_cap_usd).toFixed(2)}`, "SPEND_CAP_USD. Model calls stop when it is reached")}
+      ${row("Model calls per minute", esc(s.rate_limit_per_minute), "RATE_LIMIT_PER_MINUTE")}
+      ${row("Tickets from", s.source === "zammad" ? "Zammad" : "Synthetic demo data", "COPILOT_SOURCE")}
+      ${row("Teams alerts", yes(s.teams_webhook_set, "Webhook set", "Not set, alerts show here only"), "TEAMS_WEBHOOK_URL")}
     </dl>
   </section>
-  <div><button class="btn primary" id="save-settings" type="button">Save settings</button></div>`;
+  <section class="card">
+    <div class="card-head"><h2>AI suggestion emails</h2>${yes(s.suggestions?.enabled, "On", "Off")}</div>
+    <p class="muted">A new ticket's client can get a few safe things to try while an engineer has it, clearly labelled as AI, with a button to say it is fixed. Skipped for P1 and P2, security, account access and lost devices.</p>
+    <dl class="facts">
+      ${row("Clients", esc(s.suggestions?.clients ?? "none"), "SUGGESTION_CLIENTS")}
+      ${row("Sending", esc(s.suggestions?.transport ?? "off"), "SUGGESTION_EMAIL_TRANSPORT")}
+      ${row("Confirm link secret", yes(s.suggestions?.link_secret_set, "Set", "Not set"), "SUGGESTION_LINK_SECRET")}
+      ${row("Harness", esc(s.suggestions?.harness ?? "Not run"))}
+    </dl>
+  </section>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -586,7 +585,7 @@ function render() {
 }
 
 document.addEventListener("click", async (event) => {
-  const el = event.target.closest("[data-ticket],[data-priority],[data-kind],[data-edit],[data-revert],[data-cancel],[data-suggestions],[data-reopen],#save-settings");
+  const el = event.target.closest("[data-ticket],[data-priority],[data-kind],[data-edit],[data-revert],[data-cancel],[data-suggestions],[data-reopen]");
   if (!el) return;
   const r = route();
   const ticket = r.ticket && DATA.tickets.find((t) => t.id === r.ticket);
@@ -614,8 +613,6 @@ document.addEventListener("click", async (event) => {
       toast("Ticket reopened. The client has not been told.");
     } catch (error) { toast(error.message); }
     render();
-  } else if (el.id === "save-settings") {
-    toast("Settings are read from .env for now. Edit .env and restart the app.");
   }
 });
 

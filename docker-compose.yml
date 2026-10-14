@@ -1,4 +1,4 @@
-# Local stack for Service Desk Copilot: Postgres, Zammad and Mailpit.
+# Local stack for Service Desk Copilot: the copilot, Postgres, Zammad and Mailpit.
 #
 # Based on Zammad's official layout (github.com/zammad/zammad-docker-compose),
 # trimmed for a small VPS: Elasticsearch is optional (`--profile search`) and
@@ -7,6 +7,7 @@
 #
 #   docker compose up -d --wait
 #   docker compose --profile search up -d --wait    # with Elasticsearch
+#   docker compose --profile tunnel up -d --wait    # the public demo (docs/deploy.md)
 
 x-zammad: &zammad
   image: zammad/zammad-docker-compose:${ZAMMAD_VERSION:-7.2.2-0000}
@@ -118,6 +119,32 @@ services:
       zammad-railsserver:
         condition: service_healthy
 
+  # The copilot itself. With COPILOT_SOURCE=demo (the default) it shows the
+  # synthetic dev threads; with COPILOT_SOURCE=zammad it works on Zammad.
+  copilot:
+    build: .
+    image: service-desk-copilot:local
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://copilot:${COPILOT_DB_PASSWORD}@postgres:5432/copilot
+      ZAMMAD_URL: http://zammad-nginx:8080
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+    volumes:
+      # The evaluation screen and the suggestion email gate read the latest
+      # harness reports from `uv run python -m copilot.evaluation`.
+      - ./reports:/app/reports:ro
+    ports:
+      - "127.0.0.1:${COPILOT_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+
   mailpit:
     image: axllent/mailpit:${MAILPIT_VERSION:-v1.31.2}
     restart: unless-stopped
@@ -138,6 +165,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # The public demo: a Cloudflare Tunnel to the copilot and Zammad, so no port is
+  # opened on the VPS. Start with `docker compose --profile tunnel up -d`.
+  # See docs/deploy.md.
+  cloudflared:
+    profiles: ["tunnel"]
+    image: cloudflare/cloudflared:${CLOUDFLARED_VERSION:-2026.9.1}
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      copilot:
+        condition: service_started
 
   elasticsearch:
     profiles: ["search"]

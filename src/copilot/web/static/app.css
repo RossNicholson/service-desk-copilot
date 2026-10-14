@@ -147,6 +147,7 @@ a { color: inherit; }
 .facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 10px 0 0; }
 .facts dt { font-weight: 700; }
 .facts dd { margin: 0; color: var(--ink-soft); overflow-wrap: anywhere; }
+.facts dd small { display: block; font-size: 0.75rem; opacity: 0.8; }
 
 /* Pills */
 .pill {
