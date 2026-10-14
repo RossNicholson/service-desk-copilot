@@ -12,8 +12,12 @@ Everything runs on synthetic data for a fictional MSP, **Northgate Managed Servi
 cp .env.example .env          # then edit the passwords
 docker compose up -d --wait   # Postgres, Zammad and Mailpit
 uv sync                       # Python 3.12 dependencies
+uv run python scripts/bootstrap_zammad.py   # admin user, email channel, API token
 uv run pytest                 # unit and dataset tests
+uv run pytest -m compose      # smoke tests against the running stack
 ```
+
+Mail sent to `support@northgate-ms.example` through Mailpit's SMTP port (1025) is collected by Zammad over POP3 and becomes a ticket. Zammad's automatic replies to customers are switched off.
 
 - Zammad: http://localhost:8080
 - Mailpit: http://localhost:8025

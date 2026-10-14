@@ -1,0 +1,157 @@
+# Local stack for Service Desk Copilot: Postgres, Zammad and Mailpit.
+#
+# Based on Zammad's official layout (github.com/zammad/zammad-docker-compose),
+# trimmed for a small VPS: Elasticsearch is optional (`--profile search`) and
+# the backup service is left out. Zammad and the copilot share one Postgres
+# server, each with its own database and unprivileged role.
+#
+#   docker compose up -d --wait
+#   docker compose --profile search up -d --wait    # with Elasticsearch
+
+x-zammad: &zammad
+  image: zammad/zammad-docker-compose:${ZAMMAD_VERSION:-7.2.2-0000}
+  init: true
+  restart: unless-stopped
+  environment:
+    MEMCACHE_SERVERS: memcached:11211
+    POSTGRESQL_HOST: postgres
+    POSTGRESQL_PORT: 5432
+    POSTGRESQL_DB: zammad
+    POSTGRESQL_USER: zammad
+    POSTGRESQL_PASS: ${ZAMMAD_DB_PASSWORD:?set ZAMMAD_DB_PASSWORD in .env}
+    POSTGRESQL_OPTIONS: "?pool=50"
+    POSTGRESQL_DB_CREATE: "false"
+    REDIS_URL: redis://redis:6379
+    TZ: Europe/London
+    ELASTICSEARCH_ENABLED: ${ELASTICSEARCH_ENABLED:-false}
+    ELASTICSEARCH_HOST: elasticsearch
+    NGINX_PORT: 8080
+  volumes:
+    - zammad-storage:/opt/zammad/storage
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    memcached:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:${POSTGRES_VERSION:-17.11-alpine}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      ZAMMAD_DB_PASSWORD: ${ZAMMAD_DB_PASSWORD:?set ZAMMAD_DB_PASSWORD in .env}
+      COPILOT_DB_PASSWORD: ${COPILOT_DB_PASSWORD:?set COPILOT_DB_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/10-init-databases.sh:ro
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      # Connect as the copilot role over TCP: pg_isready would pass before the
+      # init script has created the roles and databases.
+      test:
+        - CMD-SHELL
+        - >-
+          PGPASSWORD="$${COPILOT_DB_PASSWORD}" psql --no-password --quiet --output /dev/null
+          --host 127.0.0.1 --username copilot --dbname copilot --command "SELECT 1"
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
+
+  redis:
+    image: redis:${REDIS_VERSION:-8.10.2-alpine}
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  memcached:
+    image: memcached:${MEMCACHED_VERSION:-1.6.45-alpine}
+    command: memcached -m 256M
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "11211"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zammad-init:
+    <<: *zammad
+    command: ["zammad-init"]
+    restart: on-failure
+    user: "0:0"
+
+  zammad-railsserver:
+    <<: *zammad
+    command: ["zammad-railsserver"]
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:3000"]
+      interval: 30s
+      timeout: 5s
+      start_period: 180s
+      retries: 3
+
+  zammad-scheduler:
+    <<: *zammad
+    command: ["zammad-scheduler"]
+
+  zammad-websocket:
+    <<: *zammad
+    command: ["zammad-websocket"]
+
+  zammad-nginx:
+    <<: *zammad
+    command: ["zammad-nginx"]
+    init: false
+    ports:
+      - "127.0.0.1:${ZAMMAD_PORT:-8080}:8080"
+    depends_on:
+      zammad-railsserver:
+        condition: service_healthy
+
+  mailpit:
+    image: axllent/mailpit:${MAILPIT_VERSION:-v1.31.2}
+    restart: unless-stopped
+    environment:
+      MP_MAX_MESSAGES: 5000
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+      # Setting POP3 credentials enables Mailpit's POP3 server, which Zammad's
+      # email channel polls for new mail.
+      MP_POP3_AUTH: "${MAILPIT_POP3_USER:-zammad}:${MAILPIT_POP3_PASSWORD:?set MAILPIT_POP3_PASSWORD in .env}"
+      TZ: Europe/London
+    ports:
+      - "127.0.0.1:1025:1025"   # SMTP
+      - "127.0.0.1:8025:8025"   # web UI and API
+      - "127.0.0.1:1110:1110"   # POP3
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  elasticsearch:
+    profiles: ["search"]
+    image: elasticsearch:${ELASTICSEARCH_VERSION:-9.5.5}
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+
+volumes:
+  postgres-data:
+  redis-data:
+  zammad-storage:
+  elasticsearch-data:
