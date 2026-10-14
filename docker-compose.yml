@@ -7,6 +7,7 @@
 #
 #   docker compose up -d --wait
 #   docker compose --profile search up -d --wait    # with Elasticsearch
+#   docker compose --profile tunnel up -d --wait    # the public demo (docs/deploy.md)
 
 x-zammad: &zammad
   image: zammad/zammad-docker-compose:${ZAMMAD_VERSION:-7.2.2-0000}
@@ -160,6 +161,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # The public demo: a Cloudflare Tunnel to the copilot and Zammad, so no port is
+  # opened on the VPS. Start with `docker compose --profile tunnel up -d`.
+  # See docs/deploy.md.
+  cloudflared:
+    profiles: ["tunnel"]
+    image: cloudflare/cloudflared:${CLOUDFLARED_VERSION:-2026.9.1}
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      copilot:
+        condition: service_started
 
   elasticsearch:
     profiles: ["search"]
