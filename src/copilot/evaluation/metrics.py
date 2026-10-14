@@ -7,7 +7,7 @@ side by side.
 Note scoring is lexical for now: a fact counts as covered when most of its
 content words appear in the note, and a note item counts as supported when most
 of its content words appear in the emails. That catches missing facts and
-invented details cheaply; Phase 4 adds a model-graded judge alongside it.
+invented details cheaply; `judge.py` adds a model-graded check alongside it.
 """
 
 from __future__ import annotations

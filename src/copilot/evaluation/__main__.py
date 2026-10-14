@@ -23,6 +23,7 @@ from copilot.evaluation.dataset import load_split
 from copilot.evaluation.harness import NEEDS_MODEL, SYSTEMS, available_systems, evaluate
 from copilot.evaluation.metrics import redaction_metrics
 from copilot.evaluation.report import markdown, write_reports
+from copilot.llm import model_configured
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -41,6 +42,11 @@ def main(argv: list[str] | None = None) -> int:
         help="System to score (repeatable). Defaults to every one that can run.",
     )
     parser.add_argument(
+        "--judge",
+        action="store_true",
+        help="Also grade notes with the model (one extra call per thread per system).",
+    )
+    parser.add_argument(
         "--no-redaction", action="store_true", help="Skip the offline redaction check."
     )
     parser.add_argument("--limit", type=int, help="Only the first N threads.")
@@ -50,6 +56,8 @@ def main(argv: list[str] | None = None) -> int:
     ready = available_systems()
     systems = args.system or ready
     missing = [s for s in systems if s not in ready]
+    if args.judge and not model_configured():
+        missing.append("--judge")
     if missing:
         print(
             f"{', '.join(missing)} needs a model. Set LLM_API_KEY (and LLM_MODEL) in .env, "
@@ -59,7 +67,12 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     if not any(s in NEEDS_MODEL for s in systems) and not args.system:
         print("No model configured, so only the baseline runs.", file=sys.stderr)
-    runs = evaluate(args.split, systems, args.limit)
+    judge = None
+    if args.judge:
+        from copilot.evaluation.judge import NoteJudge
+
+        judge = NoteJudge
+    runs = evaluate(args.split, systems, args.limit, judge)
     count = len(runs[0].results) if runs else 0
     redaction = None
     if not args.no_redaction:
