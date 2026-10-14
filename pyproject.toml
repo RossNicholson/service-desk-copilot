@@ -6,7 +6,9 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "en-core-web-sm",
     "litellm==1.105.1",
+    "presidio-analyzer==2.2.364",
     "pydantic==2.14.1",
     "pydantic-settings==2.15.0",
     "pyyaml==6.0.3",
@@ -21,6 +23,10 @@ dev = [
 [build-system]
 requires = ["uv_build>=0.11,<0.12"]
 build-backend = "uv_build"
+
+[tool.uv.sources]
+# spaCy's small English model, used by Presidio to spot names. Not on PyPI.
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
 
 [tool.uv.build-backend]
 # Only the application package is installed; datagen/ and scripts/ run from the
