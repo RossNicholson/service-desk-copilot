@@ -11,7 +11,7 @@ Everything here is fictional. No real company, client or employee data is used.
 | `data/dev/` | 200 | Building and tuning prompts, heuristics and code |
 | `data/test/` | 100 | Held out for scoring only. Do not read or tune against it. |
 
-Each split has two files, one JSON object per line:
+Each split has two files, one JSON object per line (the format is defined in `src/copilot/evaluation/dataset.py`):
 
 - `threads.jsonl`: the emails only (sender, recipients, date header, subject, body). This is what the copilot sees.
 - `labels.jsonl`: the ground truth for each thread, kept separate so a model under evaluation never sees it.
@@ -27,7 +27,7 @@ Per thread:
 - **messages**: per email, whether it is a chase (and how frustrated), a false-alarm chase ("no rush"), carries a prompt injection, or changes ticket fields (for example a problem spreading to a whole site).
 - **timing** and **expected_alerts**: the response target for the priority, when (if ever) Northgate first responded, the moment alerts are judged, whether the target was breached, and every chase or silence alert that should fire.
 - **pii**: every personal value that appears in the emails (names, email addresses, phone numbers, account numbers, sort codes, dates of birth, NI numbers, test card numbers and client references), for measuring PII leakage.
-- **traits**: forwarded, multi-issue, chasing, false alarm, silence, adversarial, PII-heavy.
+- **traits**: forwarded, multi-issue, chasing, false alarm, silence, adversarial, PII-heavy, escalation (the problem spreads in a later email).
 
 Response targets are wall-clock minutes for now (`datagen/world/northgate.yaml`). Business hours can come later if the check-in work needs them.
 

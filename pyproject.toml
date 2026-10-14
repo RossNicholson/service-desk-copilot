@@ -18,13 +18,19 @@ dev = [
     "ruff==0.17.0",
 ]
 
-[tool.uv]
-# The project is run from the repository root rather than installed as a wheel.
-package = false
+[build-system]
+requires = ["uv_build>=0.11,<0.12"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+# Only the application package is installed; datagen/ and scripts/ run from the
+# repository root.
+module-name = "copilot"
+module-root = "src"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = [".", "src"]
+pythonpath = ["."]
 markers = [
     "compose: needs the docker compose stack running (deselect with -m 'not compose')",
 ]

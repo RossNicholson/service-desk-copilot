@@ -3,7 +3,7 @@
     "dev": {
       "count": 200,
       "seed": 2026,
-      "messages": 505,
+      "messages": 521,
       "clients": {
         "brackenfold": 40,
         "fernwick": 40,
@@ -18,14 +18,15 @@
         "false_alarm": 10,
         "silence": 20,
         "adversarial": 16,
-        "pii_heavy": 30
+        "pii_heavy": 30,
+        "escalation": 20
       },
       "priorities": {
-        "P1": 5,
-        "P2": 20,
-        "P3": 46,
-        "P4": 81,
-        "P5": 48
+        "P1": 6,
+        "P2": 27,
+        "P3": 49,
+        "P4": 71,
+        "P5": 47
       },
       "renderer": "template",
       "model": null,
@@ -35,7 +36,7 @@
     "test": {
       "count": 100,
       "seed": 7341,
-      "messages": 237,
+      "messages": 253,
       "clients": {
         "brackenfold": 20,
         "fernwick": 20,
@@ -50,14 +51,15 @@
         "false_alarm": 5,
         "silence": 10,
         "adversarial": 8,
-        "pii_heavy": 15
+        "pii_heavy": 15,
+        "escalation": 10
       },
       "priorities": {
-        "P1": 4,
-        "P2": 10,
+        "P1": 2,
+        "P2": 13,
         "P3": 24,
-        "P4": 25,
-        "P5": 37
+        "P4": 36,
+        "P5": 25
       },
       "renderer": "template",
       "model": null,
@@ -72,8 +74,9 @@
     "datagen/clients/quillstone.yaml": "8bf43a45a80d7763",
     "datagen/clients/ravensmere.yaml": "e459d8ca19a2be93",
     "datagen/prompts/render_thread.v1.md": "210854fab3d6ffbf",
-    "datagen/scenarios/mix.yaml": "56ebbeea65828b49",
+    "datagen/scenarios/mix.yaml": "ef51db97c1f5fc74",
     "datagen/world/issues.yaml": "affae831612f0756",
     "datagen/world/northgate.yaml": "1a29f67e2a10a114"
-  }
+  },
+  "label_format": "1"
 }

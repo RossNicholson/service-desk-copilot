@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from datagen.plan import SCOPE_IMPACT, ThreadPlan, priority
+from copilot.priority import priority
+from datagen.plan import SCOPE_IMPACT, ThreadPlan
 from datagen.schema import (
     ExpectedAlert,
     MessageLabel,
@@ -67,7 +68,14 @@ def build_labels(
     def updates(m) -> dict[str, str | int]:
         if m.kind != "escalation":
             return {}
-        return {"impact": impact, "urgency": plan.final_urgency, "priority": pri}
+        before_impact = SCOPE_IMPACT[plan.scope]
+        before = {
+            "impact": before_impact,
+            "urgency": plan.urgency,
+            "priority": priority(before_impact, plan.urgency),
+        }
+        after = {"impact": impact, "urgency": plan.final_urgency, "priority": pri}
+        return {k: v for k, v in after.items() if v != before[k]}
 
     messages = [
         MessageLabel(

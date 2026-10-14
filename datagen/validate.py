@@ -19,8 +19,9 @@ import re
 import sys
 from pathlib import Path
 
+from copilot.evaluation.dataset import load_split
+from copilot.priority import priority
 from datagen import pools
-from datagen.plan import priority
 from datagen.schema import Thread, ThreadLabels
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -140,18 +141,8 @@ def validate_pair(thread: Thread, labels: ThreadLabels) -> list[str]:
 
 
 def read_split(split_dir: Path) -> list[tuple[Thread, ThreadLabels]]:
-    threads = [
-        Thread.model_validate_json(line)
-        for line in (split_dir / "threads.jsonl").read_text(encoding="utf-8").splitlines()
-    ]
-    labels = [
-        ThreadLabels.model_validate_json(line)
-        for line in (split_dir / "labels.jsonl").read_text(encoding="utf-8").splitlines()
-    ]
-    by_id = {lab.thread_id: lab for lab in labels}
-    if len(by_id) != len(threads) or {t.thread_id for t in threads} != set(by_id):
-        raise ValueError(f"{split_dir}: threads and labels do not line up")
-    return [(t, by_id[t.thread_id]) for t in threads]
+    pairs = load_split(split_dir.name, split_dir.parent)
+    return [(p.thread, p.labels) for p in pairs]
 
 
 def main(data_dir: Path = ROOT / "data") -> int:

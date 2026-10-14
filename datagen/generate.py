@@ -19,6 +19,7 @@ from pathlib import Path
 
 import yaml
 
+from copilot.evaluation.dataset import LABEL_FORMAT
 from datagen.labels import build_labels
 from datagen.messify import Messifier
 from datagen.plan import TRAIT_NAMES, plan_split
@@ -133,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.dry_run:
         return 0
+    manifest["label_format"] = LABEL_FORMAT
     manifest["inputs"] = {
         str(p.relative_to(ROOT)): _sha(p)
         for p in sorted(
