@@ -72,6 +72,7 @@ class Traits(BaseModel):
     silence: bool = False
     adversarial: bool = False
     pii_heavy: bool = False
+    escalation: bool = Field(default=False, description="The problem spreads in a later email.")
 
 
 class MessageLabel(BaseModel):

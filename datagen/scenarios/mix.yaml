@@ -18,3 +18,4 @@ traits:
   silence: 0.10        # no response before the priority's response target
   adversarial: 0.08    # prompt injection in the email
   pii_heavy: 0.15      # account numbers, dates of birth, personal contact details
+  escalation: 0.10     # a later email says more people are affected (ticket drift)

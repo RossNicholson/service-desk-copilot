@@ -1,6 +1,7 @@
 from datetime import timedelta
 
-from datagen.plan import PRIORITY_MATRIX, TRAIT_NAMES, allocate_traits, plan_split, priority
+from copilot.priority import PRIORITY_MATRIX, priority
+from datagen.plan import TRAIT_NAMES, allocate_traits, plan_split
 
 
 def test_same_seed_gives_same_plans(world, mix):

@@ -17,6 +17,7 @@ from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel
 
+from copilot.priority import priority
 from datagen import pools
 from datagen.names import FIRST_NAMES, LAST_NAMES
 from datagen.schema import Client, Engineer, Issue, Person, Traits
@@ -24,17 +25,6 @@ from datagen.world import World
 
 LONDON = ZoneInfo("Europe/London")
 
-PRIORITY_MATRIX = {
-    (1, 1): "P1",
-    (1, 2): "P2",
-    (1, 3): "P3",
-    (2, 1): "P2",
-    (2, 2): "P3",
-    (2, 3): "P4",
-    (3, 1): "P3",
-    (3, 2): "P4",
-    (3, 3): "P5",
-}
 SCOPE_IMPACT = {"site": 1, "team": 2, "single": 3}
 
 TRAIT_NAMES = (
@@ -45,7 +35,9 @@ TRAIT_NAMES = (
     "silence",
     "adversarial",
     "pii_heavy",
+    "escalation",
 )
+WIDTH = ("single", "team", "site")
 
 MessageKind = Literal["initial", "ack", "chase", "resend", "false_alarm", "info", "escalation"]
 
@@ -108,10 +100,6 @@ class ThreadPlan(BaseModel):
 
 def _fill(text: str, fills: dict[str, str]) -> str:
     return re.sub(r"\{(\w+)\}", lambda m: fills.get(m.group(1), m.group(0)), text)
-
-
-def priority(impact: int, urgency: int) -> str:
-    return PRIORITY_MATRIX[(impact, urgency)]
 
 
 def allocate_traits(n: int, mix: dict[str, float], rng: random.Random) -> list[Traits]:
@@ -269,14 +257,17 @@ class Planner:
     def plan(self, thread_id: str, client: Client, traits: Traits) -> ThreadPlan:
         rng = self.rng
         world = self.world
-        issue = rng.choice(world.issues)
+        issues = world.issues
+        if traits.escalation:  # the problem must be able to spread
+            issues = tuple(i for i in issues if len(i.scopes) > 1)
+        issue = rng.choice(issues)
         caller = rng.choice(client.people)
         reported_by = caller
         if traits.forwarded:
             reported_by = rng.choice([p for p in client.people if p.id != caller.id])
         fills = self._fills(client, caller, issue)
 
-        scope = rng.choice(issue.scopes)
+        scope = rng.choice(issue.scopes[:-1] if traits.escalation else issue.scopes)
         urgency = rng.choices([1, 2, 3], weights=[3, 6, 3])[0]
         if issue.id in ("new-starter", "leaver", "software-install"):
             urgency = rng.choice([2, 3])
@@ -377,8 +368,9 @@ class Planner:
             fact = missing.pop(rng.randrange(len(missing)))
             add("info", rng.uniform(10, 90), facts=[fact])
             stated.append(fact)
-        if scope != "site" and "site" in issue.scopes and rng.random() < 0.12:
-            final_scope = "site" if scope == "team" or "team" not in issue.scopes else "team"
+        if traits.escalation:
+            wider = [w for w in WIDTH if w in issue.scopes and WIDTH.index(w) > WIDTH.index(scope)]
+            final_scope = wider[0]
             final_scope_text = self._scope_text(final_scope, fills)
             final_urgency = min(urgency, 2)
             add(

@@ -20,8 +20,8 @@ import sys
 from pathlib import Path
 
 from copilot.evaluation.dataset import load_split
+from copilot.priority import priority
 from datagen import pools
-from datagen.plan import priority
 from datagen.schema import Thread, ThreadLabels
 
 ROOT = Path(__file__).resolve().parent.parent
