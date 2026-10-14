@@ -2,8 +2,8 @@ import json
 
 from copilot.evaluation import harness
 from copilot.evaluation.__main__ import main
-from copilot.extraction import ModelCopilot
 from copilot.llm import ModelClient
+from copilot.pipeline import ModelCopilot
 
 
 def test_one_command_scores_the_baseline(tmp_path, monkeypatch, capsys):

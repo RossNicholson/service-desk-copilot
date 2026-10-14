@@ -14,8 +14,9 @@ from copilot.config import Settings
 from copilot.directory import load_directory
 from copilot.evaluation.dataset import load_split
 from copilot.evaluation.metrics import field_metrics, pii_metrics
-from copilot.extraction import FieldExtractor, ModelCopilot
+from copilot.extraction import FieldExtractor
 from copilot.llm import ModelClient, ModelOutputError, Redacted, SpendCapReached, email_block
+from copilot.pipeline import ModelCopilot
 from copilot.redaction import Redactor
 
 SECRET = "sk-test-not-a-real-key-123"
@@ -37,11 +38,30 @@ def guess(value, confidence=0.9, reason="Stated in the email."):
     return {"value": value, "confidence": confidence, "reason": reason}
 
 
+def fake_note(user, invent=False):
+    """A note quoting the first client email, plus an invented item if asked."""
+    blocks = re.findall(r"<email-[0-9a-f]+>\n(.*?)\n</email-", user, re.S)
+    client = next(b for b in blocks if "service desk (not the client)" not in b)
+    body = client.split("\n\n", 1)[1]
+    words = re.findall(r"[A-Za-z']+", body)
+    quote = " ".join(words[1:7])
+    note = {
+        "reported": {"text": quote, "quote": quote},
+        "asks": [{"text": "Please help [PERSON_1]", "quote": quote}],
+        "tried": [],
+        "missing": [1, 2, 99],
+    }
+    if invent:
+        note["tried"] = [{"text": "Reinstalled Windows", "quote": "I reinstalled Windows twice"}]
+    return note
+
+
 class FakeModel:
     """Answers with the first person listed and a fixed route, and records each call."""
 
-    def __init__(self, route=1, impact=3, urgency=2, confidence=0.9, raw=None):
+    def __init__(self, route=1, impact=3, urgency=2, confidence=0.9, raw=None, invent=False):
         self.calls = []
+        self.invent = invent
         self.answer = {"route": route, "impact": impact, "urgency": urgency}
         self.confidence = confidence
         self.raw = raw
@@ -53,6 +73,8 @@ class FakeModel:
                 choices=[SimpleNamespace(message=SimpleNamespace(content=self.raw))], usage=None
             )
         user = kwargs["messages"][1]["content"]
+        if kwargs["response_format"].__name__ == "NoteOut":
+            return reply(fake_note(user, self.invent))
         person = re.search(r"- (\[PERSON_\d+\]):", user)
         c = self.confidence
         return reply(
@@ -120,10 +142,13 @@ def test_one_call_per_inbound_email_with_previous_answer(directory, threads):
     fake = FakeModel()
     result = copilot(fake, directory).process(lt.thread, lt.labels.timing.observed_at)
     inbound = sum(m.direction == "inbound" for m in lt.labels.messages)
-    assert result.usage.calls == len(fake.calls) == inbound
-    assert result.usage.prompt_tokens == 100 * inbound
-    assert "- none yet" in fake.calls[0]["messages"][1]["content"]
-    assert "- route: 1" in fake.calls[1]["messages"][1]["content"]
+    # Each inbound email costs one call for the fields and one for the note.
+    assert result.usage.calls == len(fake.calls) == 2 * inbound
+    assert result.usage.prompt_tokens == 200 * inbound
+    extract = [c for c in fake.calls if c["response_format"].__name__ == "ExtractedFields"]
+    assert "- none yet" in extract[0]["messages"][1]["content"]
+    assert "- route: 1" in extract[1]["messages"][1]["content"]
+    assert len(result.notes) == inbound
     # Nothing changed, so only the first email produces field changes.
     assert {c.message_index for c in result.field_changes} == {0}
 
