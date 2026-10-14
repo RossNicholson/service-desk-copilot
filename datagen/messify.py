@@ -128,8 +128,8 @@ def quote(previous: Email, sent: datetime, style: str) -> str:
 
 
 def _reply_subject(subject: str, rng: random.Random) -> str:
-    if subject.upper().startswith(("RE:", "FW:")) and rng.random() < 0.6:
-        return subject if rng.random() < 0.5 else f"RE: {subject}"
+    if subject.upper().startswith(("RE:", "FW:", "FWD:")):
+        return subject if rng.random() < 0.8 else f"RE: {subject}"
     return f"{rng.choice(['RE', 'RE', 'Re'])}: {subject}"
 
 
