@@ -27,7 +27,7 @@ def test_fictional_values_pass(text):
         ("Ring 0113 222 3333", "phone number"),
         ("Card 4929 1234 5678 9012", "card number"),
         ("NI number AB 12 34 56 C", "NI number"),
-        ("Done — thanks", "em dash"),
+        ("Done \N{EM DASH} thanks", "em dash"),
     ],
 )
 def test_real_looking_values_fail(text, problem):

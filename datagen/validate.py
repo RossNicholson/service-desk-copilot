@@ -53,7 +53,7 @@ EMAIL_RE = re.compile(r"[\w.+'-]+@([\w-]+(?:\.[\w-]+)+)")
 PHONE_RE = re.compile(r"(?<!\d )(?<![\d-])(?:\+44\s?|0)\d{2,4}[\s-]?\d{3,4}[\s-]?\d{3,4}(?![\d-])")
 CARD_RE = re.compile(r"(?<!\d)(?:\d{4}[ -]){3}\d{4}(?!\d)|(?<!\d)\d{16}(?!\d)")
 NI_RE = re.compile(r"\b[A-Z]{2}\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-D]\b")
-EM_DASH = "—"
+EM_DASH = "\N{EM DASH}"
 
 # Ofcom ranges reserved for TV and radio drama, as digit prefixes (national format).
 DRAMA_PREFIXES = (

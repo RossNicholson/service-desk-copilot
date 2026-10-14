@@ -40,7 +40,7 @@ def test_prompt_has_system_and_user_sections():
     prompt = load_prompt()
     assert set(prompt) == {"system", "user"}
     assert "British English" in prompt["system"]
-    assert "—" not in prompt["system"] + prompt["user"]
+    assert "\N{EM DASH}" not in prompt["system"] + prompt["user"]
 
 
 def test_renders_and_passes_facts_to_the_model(world, plan):
