@@ -10,7 +10,7 @@ client library.
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,7 +30,12 @@ class Settings(BaseSettings):
         default=None,
         description="Override the provider endpoint, for Azure OpenAI or a local Ollama server.",
     )
-    llm_temperature: float = 0.0
+    # Left unset by default: newer models reject a temperature and choose their own.
+    llm_temperature: float | None = None
+    # Prices in US dollars per million tokens, for models LiteLLM's bundled price list
+    # does not know yet. Without a price, calls count as free and the spend cap cannot trip.
+    llm_input_cost_per_mtok: float | None = Field(default=None, ge=0)
+    llm_output_cost_per_mtok: float | None = Field(default=None, ge=0)
 
     # Spending and rate limits, so a public demo cannot run up a bill.
     spend_cap_usd: float = Field(default=5.0, ge=0)
@@ -69,6 +74,14 @@ class Settings(BaseSettings):
     suggestion_email_transport: Literal["off", "smtp"] = "off"
     suggestion_link_secret: SecretStr | None = None
     suggestions_require_harness: bool = True
+
+    @field_validator(
+        "llm_temperature", "llm_input_cost_per_mtok", "llm_output_cost_per_mtok", mode="before"
+    )
+    @classmethod
+    def _blank_number(cls, value: object) -> object:
+        """A blank number in .env means unset."""
+        return None if isinstance(value, str) and not value.strip() else value
 
     def suggestion_client_ids(self) -> set[str] | None:
         """The clients suggestions are on for; None means all of them."""
