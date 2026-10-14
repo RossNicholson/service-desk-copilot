@@ -1,0 +1,179 @@
+# Fictional client of Northgate Managed Services. Not a real firm.
+id: harbourline
+name: Harbourline Building Society
+short_name: Harbourline
+sector: building society
+domain: harbourline-bs.example
+sites:
+- Head Office, Scarborough
+- Pickering branch
+- Malton branch
+contract: premier
+disclaimer: Harbourline Building Society is authorised by the Prudential Regulation Authority and regulated
+  by the Financial Conduct Authority and the Prudential Regulation Authority. This email and any attachments
+  are confidential and intended solely for the addressee.
+services:
+  email: Outlook and Exchange Online
+  teams: Microsoft Teams
+  sharepoint: SharePoint intranet
+  onedrive: OneDrive
+  office_apps: Microsoft 365 apps
+  mfa: Microsoft Authenticator MFA
+  accounts: User accounts
+  vpn: Remote access VPN
+  wifi: Office Wi-Fi
+  internet: Internet connection
+  laptop: Laptops
+  printer: Printers and scanners
+  mobile: Company mobiles
+  phone: Teams Phone
+  file_share: Shared drives
+  backup: Backups
+  security: Endpoint protection
+  lob_core: MortgageDesk (mortgage origination)
+  lob_crm: Member CRM
+people:
+- id: harbourline-01
+  first_name: Yasmin
+  last_name: Fenton
+  email: yasmin.fenton@harbourline-bs.example
+  role: Chief Executive
+  phone: null
+  mobile: 07700 900010
+  vip: true
+  persona:
+    tone: casual
+    typo_rate: 0.02
+    mobile_share: 0.3
+- id: harbourline-02
+  first_name: Maria
+  last_name: Nwosu
+  email: maria.nwosu@harbourline-bs.example
+  role: Head of Operations
+  phone: null
+  mobile: 07700 900017
+  vip: true
+  persona:
+    tone: casual
+    typo_rate: 0.02
+    mobile_share: 0.6
+- id: harbourline-03
+  first_name: Ruth
+  last_name: Lambert
+  email: ruth.lambert@harbourline-bs.example
+  role: Branch Manager, Pickering
+  phone: 0113 496 0860
+  mobile: 07700 900024
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.02
+    mobile_share: 0.6
+- id: harbourline-04
+  first_name: Maria
+  last_name: Kowalski
+  email: maria.kowalski@harbourline-bs.example
+  role: Branch Manager, Malton
+  phone: 0113 496 0987
+  mobile: 07700 900031
+  vip: false
+  persona:
+    tone: anxious
+    typo_rate: 0.02
+    mobile_share: 0.1
+- id: harbourline-05
+  first_name: Deepa
+  last_name: Osei
+  email: deepa.osei@harbourline-bs.example
+  role: Mortgage Underwriter
+  phone: 0113 496 0746
+  mobile: 07700 900038
+  vip: false
+  persona:
+    tone: formal
+    typo_rate: 0.02
+    mobile_share: 0.6
+- id: harbourline-06
+  first_name: Eilidh
+  last_name: Sandhu
+  email: eilidh.sandhu@harbourline-bs.example
+  role: Mortgage Underwriter
+  phone: 0113 496 0976
+  mobile: null
+  vip: false
+  persona:
+    tone: anxious
+    typo_rate: 0.02
+    mobile_share: 0.3
+- id: harbourline-07
+  first_name: Bethan
+  last_name: Okafor
+  email: bethan.okafor@harbourline-bs.example
+  role: Savings Adviser
+  phone: 0113 496 0009
+  mobile: null
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.07
+    mobile_share: 0.0
+- id: harbourline-08
+  first_name: Aisha
+  last_name: Lambert
+  email: aisha.lambert@harbourline-bs.example
+  role: Savings Adviser
+  phone: 0113 496 0734
+  mobile: null
+  vip: false
+  persona:
+    tone: formal
+    typo_rate: 0.04
+    mobile_share: 0.0
+- id: harbourline-09
+  first_name: Niamh
+  last_name: Adeyemi
+  email: niamh.adeyemi@harbourline-bs.example
+  role: Compliance Officer
+  phone: 0113 496 0779
+  mobile: 07700 900045
+  vip: false
+  persona:
+    tone: terse
+    typo_rate: 0.0
+    mobile_share: 0.1
+- id: harbourline-10
+  first_name: Alex
+  last_name: Fairbairn
+  email: alex.fairbairn@harbourline-bs.example
+  role: Office Manager
+  phone: 0113 496 0706
+  mobile: 07700 900052
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.02
+    mobile_share: 0.3
+- id: harbourline-11
+  first_name: Aisha
+  last_name: Hartigan
+  email: aisha.hartigan@harbourline-bs.example
+  role: Finance Assistant
+  phone: 0113 496 0744
+  mobile: 07700 900059
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.01
+    mobile_share: 0.1
+- id: harbourline-12
+  first_name: Ciaran
+  last_name: Hartigan
+  email: ciaran.hartigan@harbourline-bs.example
+  role: Member Services Assistant
+  phone: null
+  mobile: null
+  vip: false
+  persona:
+    tone: terse
+    typo_rate: 0.07
+    mobile_share: 0.1

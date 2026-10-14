@@ -1,0 +1,20 @@
+# Scenario mix for the synthetic dataset. Each share is the fraction of threads
+# given that trait; traits overlap, so shares add up to more than 1.
+# Threads with none of these traits are single, clear issues.
+
+splits:
+  dev: {count: 200, seed: 2026}
+  test: {count: 100, seed: 7341}
+
+dates:
+  start: "2026-09-01"
+  end: "2026-10-09"
+
+traits:
+  forwarded: 0.20      # forwarded or quoted on behalf of someone else
+  multi_issue: 0.10    # a second, unrelated issue in the same email
+  chasing: 0.15        # "any update?", resends, rising frustration
+  false_alarm: 0.05    # chase-like wording that is not a chase ("no rush")
+  silence: 0.10        # no response before the priority's response target
+  adversarial: 0.08    # prompt injection in the email
+  pii_heavy: 0.15      # account numbers, dates of birth, personal contact details

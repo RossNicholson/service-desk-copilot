@@ -1,0 +1,177 @@
+# Fictional client of Northgate Managed Services. Not a real firm.
+id: brackenfold
+name: Brackenfold Insurance Brokers
+short_name: Brackenfold
+sector: insurance broker
+domain: brackenfold-insurance.example
+sites:
+- Leeds office
+- Harrogate office
+contract: professional
+disclaimer: Brackenfold Insurance Brokers is authorised and regulated by the Financial Conduct Authority.
+  This email is confidential and may be legally privileged.
+services:
+  email: Outlook and Exchange Online
+  teams: Microsoft Teams
+  sharepoint: SharePoint intranet
+  onedrive: OneDrive
+  office_apps: Microsoft 365 apps
+  mfa: Microsoft Authenticator MFA
+  accounts: User accounts
+  vpn: Remote access VPN
+  wifi: Office Wi-Fi
+  internet: Internet connection
+  laptop: Laptops
+  printer: Printers and scanners
+  mobile: Company mobiles
+  phone: Teams Phone
+  file_share: Shared drives
+  backup: Backups
+  security: Endpoint protection
+  lob_core: BrokerHub (policy administration)
+  lob_crm: Quote portal
+people:
+- id: brackenfold-01
+  first_name: Ruth
+  last_name: Mensah
+  email: ruth.mensah@brackenfold-insurance.example
+  role: Managing Director
+  phone: 0113 496 0049
+  mobile: null
+  vip: true
+  persona:
+    tone: formal
+    typo_rate: 0.01
+    mobile_share: 0.6
+- id: brackenfold-02
+  first_name: Ananya
+  last_name: Coleman
+  email: ananya.coleman@brackenfold-insurance.example
+  role: Operations Director
+  phone: null
+  mobile: null
+  vip: true
+  persona:
+    tone: anxious
+    typo_rate: 0.02
+    mobile_share: 0.1
+- id: brackenfold-03
+  first_name: Chloe
+  last_name: Yeung
+  email: chloe.yeung@brackenfold-insurance.example
+  role: Account Executive
+  phone: 0113 496 0256
+  mobile: 07700 900129
+  vip: false
+  persona:
+    tone: anxious
+    typo_rate: 0.02
+    mobile_share: 0.3
+- id: brackenfold-04
+  first_name: Grace
+  last_name: Fairbairn
+  email: grace.fairbairn@brackenfold-insurance.example
+  role: Account Executive
+  phone: 0113 496 0518
+  mobile: 07700 900136
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.0
+    mobile_share: 0.1
+- id: brackenfold-05
+  first_name: Naomi
+  last_name: Novak
+  email: naomi.novak@brackenfold-insurance.example
+  role: Account Handler
+  phone: 0113 496 0339
+  mobile: 07700 900143
+  vip: false
+  persona:
+    tone: anxious
+    typo_rate: 0.0
+    mobile_share: 0.0
+- id: brackenfold-06
+  first_name: Sean
+  last_name: Adeyemi
+  email: sean.adeyemi@brackenfold-insurance.example
+  role: Account Handler
+  phone: 0113 496 0846
+  mobile: null
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.02
+    mobile_share: 0.6
+- id: brackenfold-07
+  first_name: Rhys
+  last_name: Calloway
+  email: rhys.calloway@brackenfold-insurance.example
+  role: Claims Handler
+  phone: null
+  mobile: null
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.0
+    mobile_share: 0.6
+- id: brackenfold-08
+  first_name: Sarah
+  last_name: Sinclair
+  email: sarah.sinclair@brackenfold-insurance.example
+  role: Claims Handler
+  phone: 0113 496 0532
+  mobile: 07700 900150
+  vip: false
+  persona:
+    tone: terse
+    typo_rate: 0.01
+    mobile_share: 0.1
+- id: brackenfold-09
+  first_name: Owen
+  last_name: Coleman
+  email: owen.coleman@brackenfold-insurance.example
+  role: Office Manager
+  phone: 0113 496 0552
+  mobile: 07700 900157
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.01
+    mobile_share: 0.1
+- id: brackenfold-10
+  first_name: Laura
+  last_name: Strachan
+  email: laura.strachan@brackenfold-insurance.example
+  role: Compliance Manager
+  phone: 0113 496 0390
+  mobile: null
+  vip: false
+  persona:
+    tone: formal
+    typo_rate: 0.04
+    mobile_share: 0.1
+- id: brackenfold-11
+  first_name: Tariq
+  last_name: Campbell
+  email: tariq.campbell@brackenfold-insurance.example
+  role: Accounts Assistant
+  phone: 0113 496 0736
+  mobile: 07700 900164
+  vip: false
+  persona:
+    tone: formal
+    typo_rate: 0.02
+    mobile_share: 0.3
+- id: brackenfold-12
+  first_name: Morgan
+  last_name: Fairbairn
+  email: morgan.fairbairn@brackenfold-insurance.example
+  role: Apprentice Account Handler
+  phone: 0113 496 0034
+  mobile: null
+  vip: false
+  persona:
+    tone: anxious
+    typo_rate: 0.02
+    mobile_share: 0.0

@@ -1,0 +1,108 @@
+# The fictional MSP. Response targets are wall-clock minutes to first response, by priority.
+name: Northgate Managed Services
+domain: northgate-ms.example
+support_address: support@northgate-ms.example
+response_targets_minutes:
+  P1: 15
+  P2: 30
+  P3: 120
+  P4: 480
+  P5: 1440
+groups:
+- key: service-desk
+  name: Service Desk
+  lead: ng-service-desk-1
+- key: desktop
+  name: Desktop Support
+  lead: ng-desktop-1
+- key: identity
+  name: Microsoft 365 and Identity
+  lead: ng-identity-1
+- key: network
+  name: Network and Connectivity
+  lead: ng-network-1
+- key: infrastructure
+  name: Infrastructure and Servers
+  lead: ng-infrastructure-1
+- key: security
+  name: Security Operations
+  lead: ng-security-1
+- key: applications
+  name: Business Applications
+  lead: ng-applications-1
+- key: telephony
+  name: Telephony
+  lead: ng-telephony-1
+engineers:
+- id: ng-service-desk-1
+  name: Jasmine Hartigan
+  email: jasmine.hartigan@northgate-ms.example
+  group: service-desk
+- id: ng-service-desk-2
+  name: Kemi Thackeray
+  email: kemi.thackeray@northgate-ms.example
+  group: service-desk
+- id: ng-service-desk-3
+  name: Olusegun Sinclair
+  email: olusegun.sinclair@northgate-ms.example
+  group: service-desk
+- id: ng-service-desk-4
+  name: Alex Hartigan
+  email: alex.hartigan@northgate-ms.example
+  group: service-desk
+- id: ng-desktop-1
+  name: Sanjay Brennan
+  email: sanjay.brennan@northgate-ms.example
+  group: desktop
+- id: ng-desktop-2
+  name: Naomi Shah
+  email: naomi.shah@northgate-ms.example
+  group: desktop
+- id: ng-identity-1
+  name: Sinead Kaur
+  email: sinead.kaur@northgate-ms.example
+  group: identity
+- id: ng-identity-2
+  name: Hannah Chaudhry
+  email: hannah.chaudhry@northgate-ms.example
+  group: identity
+- id: ng-network-1
+  name: Tom Okafor
+  email: tom.okafor@northgate-ms.example
+  group: network
+- id: ng-network-2
+  name: Una Bhatt
+  email: una.bhatt@northgate-ms.example
+  group: network
+- id: ng-infrastructure-1
+  name: Ananya Dunmore
+  email: ananya.dunmore@northgate-ms.example
+  group: infrastructure
+- id: ng-infrastructure-2
+  name: Tariq Hadley
+  email: tariq.hadley@northgate-ms.example
+  group: infrastructure
+- id: ng-security-1
+  name: Deepa Wainwright
+  email: deepa.wainwright@northgate-ms.example
+  group: security
+- id: ng-security-2
+  name: Mohammed Adeyemi
+  email: mohammed.adeyemi@northgate-ms.example
+  group: security
+- id: ng-applications-1
+  name: Isla Greaves
+  email: isla.greaves@northgate-ms.example
+  group: applications
+- id: ng-applications-2
+  name: Mohammed Kaur
+  email: mohammed.kaur@northgate-ms.example
+  group: applications
+- id: ng-telephony-1
+  name: Ciaran Hadley
+  email: ciaran.hadley@northgate-ms.example
+  group: telephony
+- id: ng-telephony-2
+  name: Niamh Moreau
+  email: niamh.moreau@northgate-ms.example
+  group: telephony

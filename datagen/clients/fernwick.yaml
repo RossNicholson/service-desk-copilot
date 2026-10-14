@@ -1,0 +1,152 @@
+# Fictional client of Northgate Managed Services. Not a real firm.
+id: fernwick
+name: Fernwick & Hale Chartered Accountants
+short_name: Fernwick & Hale
+sector: accountancy
+domain: fernwick-hale.example
+sites:
+- Bristol office
+contract: essentials
+disclaimer: Fernwick & Hale is registered to carry on audit work in the UK. This email is confidential
+  and intended for the named recipient only.
+services:
+  email: Outlook and Exchange Online
+  teams: Microsoft Teams
+  sharepoint: SharePoint intranet
+  onedrive: OneDrive
+  office_apps: Microsoft 365 apps
+  mfa: Microsoft Authenticator MFA
+  accounts: User accounts
+  vpn: Remote access VPN
+  wifi: Office Wi-Fi
+  internet: Internet connection
+  laptop: Laptops
+  printer: Printers and scanners
+  mobile: Company mobiles
+  phone: Teams Phone
+  file_share: Shared drives
+  backup: Backups
+  security: Endpoint protection
+  lob_core: PracticeLedger (practice management)
+  lob_crm: TaxFiler
+people:
+- id: fernwick-01
+  first_name: Harriet
+  last_name: Thackeray
+  email: harriet.thackeray@fernwick-hale.example
+  role: Senior Partner
+  phone: 0117 496 0272
+  mobile: null
+  vip: true
+  persona:
+    tone: formal
+    typo_rate: 0.0
+    mobile_share: 0.0
+- id: fernwick-02
+  first_name: Tom
+  last_name: Blackwood
+  email: tom.blackwood@fernwick-hale.example
+  role: Partner
+  phone: null
+  mobile: 07700 900199
+  vip: true
+  persona:
+    tone: anxious
+    typo_rate: 0.07
+    mobile_share: 0.1
+- id: fernwick-03
+  first_name: Rohan
+  last_name: Akhtar
+  email: rohan.akhtar@fernwick-hale.example
+  role: Audit Manager
+  phone: 0117 496 0427
+  mobile: null
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.02
+    mobile_share: 0.3
+- id: fernwick-04
+  first_name: Una
+  last_name: Murphy
+  email: una.murphy@fernwick-hale.example
+  role: Tax Manager
+  phone: 0117 496 0746
+  mobile: null
+  vip: false
+  persona:
+    tone: anxious
+    typo_rate: 0.07
+    mobile_share: 0.0
+- id: fernwick-05
+  first_name: Stuart
+  last_name: Varga
+  email: stuart.varga@fernwick-hale.example
+  role: Senior Accountant
+  phone: 0117 496 0018
+  mobile: null
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.02
+    mobile_share: 0.0
+- id: fernwick-06
+  first_name: Eleanor
+  last_name: Shah
+  email: eleanor.shah@fernwick-hale.example
+  role: Accountant
+  phone: 0117 496 0806
+  mobile: 07700 900206
+  vip: false
+  persona:
+    tone: terse
+    typo_rate: 0.04
+    mobile_share: 0.1
+- id: fernwick-07
+  first_name: Hannah
+  last_name: Strachan
+  email: hannah.strachan@fernwick-hale.example
+  role: Payroll Administrator
+  phone: 0117 496 0534
+  mobile: 07700 900213
+  vip: false
+  persona:
+    tone: terse
+    typo_rate: 0.0
+    mobile_share: 0.0
+- id: fernwick-08
+  first_name: Eilidh
+  last_name: Calloway
+  email: eilidh.calloway@fernwick-hale.example
+  role: Practice Administrator
+  phone: null
+  mobile: 07700 900220
+  vip: false
+  persona:
+    tone: anxious
+    typo_rate: 0.04
+    mobile_share: 0.0
+- id: fernwick-09
+  first_name: Sanjay
+  last_name: Shah
+  email: sanjay.shah@fernwick-hale.example
+  role: Trainee Accountant
+  phone: 0117 496 0990
+  mobile: 07700 900227
+  vip: false
+  persona:
+    tone: casual
+    typo_rate: 0.02
+    mobile_share: 0.6
+- id: fernwick-10
+  first_name: Isla
+  last_name: Hartigan
+  email: isla.hartigan@fernwick-hale.example
+  role: Bookkeeper
+  phone: 0117 496 0256
+  mobile: 07700 900234
+  vip: false
+  persona:
+    tone: terse
+    typo_rate: 0.0
+    mobile_share: 0.6
