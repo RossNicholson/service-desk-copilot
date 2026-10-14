@@ -1,8 +1,9 @@
-"""What the web UI shows: tickets built from the dev threads and a system's results.
+"""What the web UI shows.
 
-Until the Zammad adapter arrives in Phase 6, the UI reads the synthetic dev
-threads directly. Only the dev split is used here; the test split is held out
-for the evaluation harness.
+`snapshot` is the offline demo: the synthetic dev threads with a system's results
+(only the dev split; the test split is held out for the evaluation harness).
+`live_snapshot` is the real thing: tickets from the ticket system, with the
+copilot's fields, notes, alerts and overrides read from the audit log.
 """
 
 from __future__ import annotations
@@ -12,10 +13,12 @@ from datetime import datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
+from copilot.audit import AuditEvent, locked_fields
 from copilot.baseline import PREFIX, BaselineCopilot
 from copilot.directory import Directory, load_directory
 from copilot.evaluation.dataset import DATA_DIR, LabelledThread, load_split
-from copilot.schemas import FIELD_NAMES, ThreadResult
+from copilot.schemas import FIELD_NAMES, Email, ThreadResult
+from copilot.tickets import Ticket
 
 REPORTS = Path(__file__).resolve().parents[3] / "reports"
 
@@ -61,6 +64,41 @@ def options(directory: Directory) -> dict:
     }
 
 
+def _emails(emails: list[Email], support: str) -> list[dict]:
+    return [
+        {
+            "from_name": e.from_name,
+            "from_address": e.from_address,
+            "to": e.to,
+            "date": _when(e.date),
+            "subject": e.subject,
+            "body": e.body,
+            "outbound": e.from_address == support,
+        }
+        for e in emails
+    ]
+
+
+def _evaluation() -> dict | None:
+    report = REPORTS / "eval-dev.json"
+    return json.loads(report.read_text()) if report.exists() else None
+
+
+def _common(directory: Directory) -> dict:
+    return {
+        "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "msp": {"name": directory.msp_name, "support_address": directory.support_address},
+        "field_labels": FIELD_LABELS,
+        "options": options(directory),
+        "teams": [
+            {"name": t.name, "lead": next(e.name for e in directory.engineers if e.id == t.lead)}
+            for t in directory.teams
+        ],
+        "response_targets_minutes": directory.response_targets_minutes,
+        "evaluation": _evaluation(),
+    }
+
+
 def ticket(lt: LabelledThread, result: ThreadResult, directory: Directory, number: int) -> dict:
     thread = lt.thread
     support = directory.support_address
@@ -84,18 +122,7 @@ def ticket(lt: LabelledThread, result: ThreadResult, directory: Directory, numbe
         "fields": fields,
         "flagged": [n for n, f in fields.items() if f["needs_review"]],
         "chasing": len(chasing),
-        "emails": [
-            {
-                "from_name": e.from_name,
-                "from_address": e.from_address,
-                "to": e.to,
-                "date": _when(e.date),
-                "subject": e.subject,
-                "body": e.body,
-                "outbound": e.from_address == support,
-            }
-            for e in thread.messages
-        ],
+        "emails": _emails(thread.messages, support),
         "note": result.notes[-1].model_dump() if result.notes else None,
         "alerts": [a.model_dump(mode="json") for a in result.alerts],
     }
@@ -113,22 +140,115 @@ def snapshot(limit: int | None = None) -> dict:
     for i, lt in enumerate(threads, start=1):
         result = system.process(lt.thread, now=lt.labels.timing.observed_at)
         tickets.append(ticket(lt, result, directory, i))
-    report = REPORTS / "eval-dev.json"
-    evaluation = json.loads(report.read_text()) if report.exists() else None
     return {
-        "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        **_common(directory),
         "source": {
             "system": system.name,
+            "live": False,
             "note": "AI values come from the rules baseline until a model is configured.",
         },
-        "msp": {"name": directory.msp_name, "support_address": directory.support_address},
-        "field_labels": FIELD_LABELS,
-        "options": options(directory),
-        "teams": [
-            {"name": t.name, "lead": next(e.name for e in directory.engineers if e.id == t.lead)}
-            for t in directory.teams
-        ],
-        "response_targets_minutes": directory.response_targets_minutes,
         "tickets": tickets,
-        "evaluation": evaluation,
+        "audit": [],
+    }
+
+
+# -- live -----------------------------------------------------------------------------
+
+STATES = {"new": "New", "open": "Open", "closed": "Closed", "merged": "Closed"}
+
+
+def audit_entry(event: AuditEvent) -> dict:
+    """An override or revert as the activity log on the ticket view shows it."""
+    return {
+        "ticket": event.ticket_id,
+        "field": event.field,
+        "from": event.old,
+        "to": event.new,
+        "by": event.actor,
+        "at": event.at.isoformat(timespec="seconds"),
+        "action": event.kind,
+    }
+
+
+def live_fields(ticket: Ticket, events: list[AuditEvent]) -> dict:
+    """Each field as the copilot last proposed it, with any engineer override on top."""
+    runs = [e for e in events if e.kind == "run"]
+    proposed = runs[-1].detail.get("fields", {}) if runs else {}
+    locked = locked_fields(events)
+    out = {}
+    for name in FIELD_NAMES:
+        field = dict(
+            proposed.get(name)
+            or {
+                "value": ticket.fields.get(name),
+                "confidence": 0.0,
+                "reason": "Not read by the copilot yet.",
+                "needs_review": True,
+            }
+        )
+        if name in locked:
+            field["ai_value"] = field["value"]
+            field["value"] = locked[name]
+            field["overridden"] = True
+        out[name] = field
+    return out
+
+
+def live_ticket(ticket: Ticket, events: list[AuditEvent], directory: Directory) -> dict:
+    support = directory.support_address
+    fields = live_fields(ticket, events)
+    owner = next(
+        (e.name for e in directory.engineers if ticket.owner and e.email == ticket.owner),
+        ticket.owner,
+    )
+    notes = [e for e in events if e.kind == "note"]
+    alerts = [e.detail["alert"] for e in events if e.kind == "alert"]
+    runs = [e for e in events if e.kind == "run"]
+    chasing = runs[-1].detail.get("chase_assessments", []) if runs else []
+    last = ticket.emails[-1] if ticket.emails else None
+    status = STATES.get(ticket.state, ticket.state.title())
+    if last is not None and last.from_address == support and ticket.is_open:
+        status = "Waiting on client"
+    return {
+        "id": ticket.id,
+        "number": ticket.number,
+        "subject": PREFIX.sub("", ticket.title).strip(),
+        "opened_at": _when(ticket.emails[0].date) if ticket.emails else None,
+        "updated_at": _when(last.date) if last else None,
+        "observed_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "caller": _person(directory, fields["caller"]["value"]),
+        "assignee": owner,
+        "status": status,
+        "responded": any(e.from_address == support for e in ticket.emails),
+        "fields": fields,
+        "flagged": [n for n, f in fields.items() if f["needs_review"] and not f.get("overridden")],
+        "chasing": sum(1 for a in chasing if a.get("is_chase")),
+        "emails": _emails(ticket.emails, support),
+        "note": notes[-1].detail.get("note") if notes else None,
+        "alerts": alerts,
+    }
+
+
+def live_snapshot(service) -> dict:
+    """Everything the UI needs, from the ticket system and the audit log."""
+    d = service.directory
+    events = service.audit.events()
+    by_ticket: dict[str, list[AuditEvent]] = {}
+    for event in events:
+        by_ticket.setdefault(event.ticket_id, []).append(event)
+    tickets = [
+        live_ticket(t, by_ticket.get(t.id, []), d)
+        for t in service.adapter.list_tickets(open_only=False)
+        if t.emails
+    ]
+    return {
+        **_common(d),
+        "source": {
+            "system": service.system.name,
+            "live": True,
+            "note": f"Live tickets from the ticket system. AI values come from the "
+            f"{service.system.name} system.",
+        },
+        "tickets": tickets,
+        "audit": [audit_entry(e) for e in events if e.kind in ("override", "revert")],
     }

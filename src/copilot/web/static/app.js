@@ -416,7 +416,7 @@ function alerts() {
   return `
   <div class="chips">${chip("all", "All")}${chip("chase", "Chasing")}${chip("silence", "No response")}</div>
   <section class="card">
-    <div class="card-head"><h2>${items.length} alerts</h2><span class="hint">Sent to the assigned engineer in Teams, then the team lead if still untouched (Phase 6)</span></div>
+    <div class="card-head"><h2>${items.length} alerts</h2><span class="hint">Sent to the assigned engineer in Teams, then the team lead if still untouched</span></div>
     <div class="list">${items.map(alertItem).join("") || '<p class="muted">No alerts.</p>'}</div>
   </section>`;
 }
@@ -529,7 +529,7 @@ function render() {
       <span class="spacer"></span>
       ${r.page === "tickets" ? `<label class="search" for="search">${icon("search")}<input id="search" type="search" placeholder="Search subject, caller or client" value="${esc(state.query)}"></label>` : ""}
     </div>`;
-  const banner = `<div class="banner">${PREVIEW ? "Preview with synthetic Northgate data. " : ""}${esc(DATA.source.note)} Changes you make are kept until you reload.</div>`;
+  const banner = `<div class="banner">${PREVIEW ? "Preview with synthetic Northgate data. " : ""}${esc(DATA.source.note)} ${DATA.source.live ? "Changes are saved to the ticket and the audit log." : "Changes you make are kept until you reload."}</div>`;
   document.getElementById("main").innerHTML = header + banner + (r.ticket ? ticketView(r.ticket) : page.render());
   document.title = r.ticket ? `Ticket ${r.ticket} · Service Desk Copilot` : `${page.title} · Service Desk Copilot`;
 }

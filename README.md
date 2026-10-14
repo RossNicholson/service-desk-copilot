@@ -4,7 +4,7 @@ An open-source AI assistant for MSP service desks that takes ticket admin off en
 
 Everything runs on synthetic data for a fictional MSP, **Northgate Managed Services**. The repository contains no real company, client or employee data.
 
-> Status: early development (Phase 5 of 8). A full README arrives in Phase 8.
+> Status: early development (Phase 6 of 8). A full README arrives in Phase 8.
 
 ## Quick start
 
@@ -12,7 +12,7 @@ Everything runs on synthetic data for a fictional MSP, **Northgate Managed Servi
 cp .env.example .env          # then edit the passwords
 docker compose up -d --wait   # Postgres, Zammad and Mailpit
 uv sync                       # Python 3.12 dependencies
-uv run python scripts/bootstrap_zammad.py   # admin user, email channel, API token
+uv run python scripts/bootstrap_zammad.py   # admin user, email channel, copilot fields, API token
 uv run pytest                 # unit and dataset tests
 uv run pytest -m compose      # smoke tests against the running stack
 ```
@@ -34,7 +34,15 @@ Mail sent to `support@northgate-ms.example` through Mailpit's SMTP port (1025) i
 uv run uvicorn copilot.web.app:app --reload   # then open http://localhost:8000
 ```
 
-A dashboard, the ticket list, a ticket view where every AI field shows its confidence and reason and can be changed or undone, alerts, harness scores and AI settings. For now it reads the synthetic dev threads rather than Zammad, takes AI values from the rules baseline, and keeps changes in memory; Phase 6 connects it to Zammad and the audit log. `uv run python scripts/export_ui_preview.py` writes the same screens as one HTML file that opens without a server.
+A dashboard, the ticket list, a ticket view where every AI field shows its confidence and reason and can be changed or undone, alerts, harness scores and AI settings. `uv run python scripts/export_ui_preview.py` writes the same screens as one HTML file that opens without a server.
+
+By default (`COPILOT_SOURCE=demo`) the screens show the synthetic dev threads with the rules baseline's values, and changes last until a restart. To run the copilot on Zammad, put the token from the bootstrap script in `ZAMMAD_TOKEN` and set `COPILOT_SOURCE=zammad` in `.env`. The app then:
+
+- checks open tickets every `CHECKIN_INTERVAL_MINUTES` and fills in the copilot's fields (shown in Zammad as "Copilot: ..." fields) and an internal note;
+- uses your model if `LLM_API_KEY` is set, and the rules baseline otherwise;
+- sends chase and silence alerts to Teams if `TEAMS_WEBHOOK_URL` is set (create a "Post to a channel when a webhook request is received" workflow on the channel), and only lists them on the Alerts screen otherwise;
+- saves engineers' changes to Zammad, and the copilot leaves a changed field alone until it is undone;
+- writes every field change, note, alert, override and model run (with prompt version, model and cost) to the `audit_log` table in Postgres.
 
 ## Evaluation
 
