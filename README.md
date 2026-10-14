@@ -4,7 +4,7 @@ An open-source AI assistant for MSP service desks that takes ticket admin off en
 
 Everything runs on synthetic data for a fictional MSP, **Northgate Managed Services**. The repository contains no real company, client or employee data.
 
-> Status: early development (Phase 2 of 7). A full README arrives in Phase 7.
+> Status: early development (Phase 3 of 7). A full README arrives in Phase 7.
 
 ## Quick start
 
@@ -34,7 +34,13 @@ Mail sent to `support@northgate-ms.example` through Mailpit's SMTP port (1025) i
 uv run python -m copilot.evaluation
 ```
 
-Scores every system on field accuracy, note faithfulness and completeness, check-ins, chase detection, alert precision and recall, PII leakage and cost per ticket, against a rule-based baseline. See [`docs/evaluation.md`](docs/evaluation.md).
+Scores every system on field accuracy, note faithfulness and completeness, check-ins, chase detection, alert precision and recall, PII leakage and cost per ticket, against a rule-based baseline, and checks the PII redactor on its own. See [`docs/evaluation.md`](docs/evaluation.md).
+
+The copilot itself needs a model of your choice. Add `LLM_MODEL` and `LLM_API_KEY` to `.env` (any provider LiteLLM supports, or `LLM_API_BASE` for a local Ollama server) and the same command scores it next to the baseline. Without a key, only the baseline and the redaction check run.
+
+## Privacy
+
+Personal details are replaced with placeholders such as `[PERSON_1]` before any text reaches a model, using Microsoft Presidio, UK-specific patterns and the MSP's own contact list. Email text is passed to the model as fenced, untrusted data. See [`docs/redaction.md`](docs/redaction.md).
 
 ## Synthetic data
 
