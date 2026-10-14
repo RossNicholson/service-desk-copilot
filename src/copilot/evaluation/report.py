@@ -45,7 +45,7 @@ def _fmt(name: str, value: float | None) -> str:
     return f"{value:.1%}"
 
 
-def markdown(split: str, runs: list[SystemRun], count: int) -> str:
+def markdown(split: str, runs: list[SystemRun], count: int, redaction: dict | None = None) -> str:
     names = [r.system for r in runs]
     lines = [f"## Evaluation: {split} split, {count} threads", ""]
     header = "| Metric | " + " | ".join(names) + " |"
@@ -67,6 +67,21 @@ def markdown(split: str, runs: list[SystemRun], count: int) -> str:
                 row += f" {_delta(key, runs[-1].metrics.get(key), baseline.metrics.get(key))} |"
             lines.append(row)
     lines.append("")
+    if redaction:
+        lines += [
+            "### Redaction",
+            "",
+            "The redactor on its own, over every email in the split. Every model call "
+            "goes through it.",
+            "",
+            "| Metric | Value |",
+            "|---|---|",
+        ]
+        for key, value in redaction.items():
+            label = key.split(".", 1)[1].replace("_", " ")
+            shown = f"{value:.3f}s" if key.endswith("seconds_per_thread") and value else None
+            lines.append(f"| {label} | {shown or _fmt(key, value)} |")
+        lines.append("")
     lines.append(
         "Note scores are lexical proxies (word overlap with the labels and the emails) until "
         "the model-graded judge arrives in Phase 4."
@@ -103,7 +118,9 @@ def _delta(key: str, value: float | None, base: float | None) -> str:
     return f"{shown} {'better' if better else 'worse'}"
 
 
-def write_reports(out_dir: Path, split: str, runs: list[SystemRun], count: int) -> Path:
+def write_reports(
+    out_dir: Path, split: str, runs: list[SystemRun], count: int, redaction: dict | None = None
+) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     payload = {
         "split": split,
@@ -113,10 +130,11 @@ def write_reports(out_dir: Path, split: str, runs: list[SystemRun], count: int) 
             r.system: {"metrics": r.metrics, "seconds": round(r.seconds, 2), "errors": r.errors}
             for r in runs
         },
+        "redaction": redaction,
     }
     json_path = out_dir / f"eval-{split}.json"
     json_path.write_text(json.dumps(payload, indent=2) + "\n")
-    (out_dir / f"eval-{split}.md").write_text(markdown(split, runs, count))
+    (out_dir / f"eval-{split}.md").write_text(markdown(split, runs, count, redaction))
     results_path = out_dir / f"results-{split}.jsonl"
     with results_path.open("w", encoding="utf-8") as handle:
         for run in runs:
