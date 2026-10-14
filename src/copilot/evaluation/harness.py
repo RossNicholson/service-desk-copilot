@@ -10,8 +10,8 @@ from copilot.baseline import BaselineCopilot
 from copilot.directory import load_directory
 from copilot.evaluation.dataset import LabelledThread, load_split
 from copilot.evaluation.metrics import all_metrics
-from copilot.extraction import ModelCopilot
 from copilot.llm import SpendCapReached, model_configured
+from copilot.pipeline import ModelCopilot
 from copilot.schemas import ThreadResult
 
 # Every system the harness knows how to build. The copilot needs a model, so it only
@@ -38,7 +38,7 @@ class SystemRun:
     errors: list[str] = field(default_factory=list)
 
 
-def run_system(name: str, threads: list[LabelledThread]) -> SystemRun:
+def run_system(name: str, threads: list[LabelledThread], judge=None) -> SystemRun:
     system = SYSTEMS[name]()
     results, pairs, errors = [], [], []
     started = time.monotonic()
@@ -55,12 +55,18 @@ def run_system(name: str, threads: list[LabelledThread]) -> SystemRun:
         pairs.append((lt, result))
     seconds = time.monotonic() - started
     metrics = all_metrics(pairs, load_directory().support_address)
+    if judge:
+        from copilot.evaluation.judge import judge_metrics
+
+        metrics.update(judge_metrics(pairs, judge()))
     metrics["run.errors"] = float(len(errors))
     return SystemRun(system=name, metrics=metrics, results=results, seconds=seconds, errors=errors)
 
 
-def evaluate(split: str, systems: list[str], limit: int | None = None) -> list[SystemRun]:
+def evaluate(
+    split: str, systems: list[str], limit: int | None = None, judge=None
+) -> list[SystemRun]:
     threads = load_split(split)
     if limit:
         threads = threads[:limit]
-    return [run_system(name, threads) for name in systems]
+    return [run_system(name, threads, judge) for name in systems]

@@ -398,7 +398,7 @@ function noteCard(t) {
   const list = (items) => (items.length ? `<ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>` : '<span class="muted">None stated</span>');
   return `
   <section class="card note">
-    <div class="card-head"><h2>Note</h2><span class="pill muted">Draft from the rules baseline until Phase 4</span></div>
+    <div class="card-head"><h2>Note</h2><span class="pill muted">Written by ${esc(DATA.source.system)}</span></div>
     <dl>
       <dt>Reported</dt><dd>${esc(n.reported) || '<span class="muted">Not stated</span>'}</dd>
       <dt>Affected</dt><dd>${esc(n.affected) || '<span class="muted">Not stated</span>'}</dd>

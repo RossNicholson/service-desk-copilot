@@ -15,16 +15,13 @@ answer outside them is dropped and the field is flagged for review, never guesse
 
 from __future__ import annotations
 
-from datetime import datetime
-
 from pydantic import BaseModel, Field
 
-from copilot.baseline import BaselineCopilot, silence_alert
 from copilot.directory import ClientRecord, Directory, load_directory
 from copilot.llm import ModelClient, Redacted, email_block, load_prompt
 from copilot.priority import priority
 from copilot.redaction import Redactor
-from copilot.schemas import FieldChange, FieldPrediction, Thread, ThreadResult, Usage
+from copilot.schemas import FieldPrediction, Thread
 
 PROMPT_NAME = "extract_fields.v1"
 REVIEW_BELOW = 0.6  # confidence under which a field is flagged for an engineer
@@ -279,70 +276,3 @@ def _level(guess: Guess) -> int | None:
     except (TypeError, ValueError):
         return None
     return level if level in (1, 2, 3) else None
-
-
-class ModelCopilot:
-    """The copilot as the harness scores it in Phase 3.
-
-    Fields and check-in updates come from the model. Notes, chase detection and
-    chase alerts still come from the baseline until Phases 4 and 5; the silence
-    alert uses the model's priority.
-    """
-
-    name = "copilot"
-
-    def __init__(self, client: ModelClient | None = None, directory: Directory | None = None):
-        self.directory = directory or load_directory()
-        self.model = client or ModelClient()
-        self.extractor = FieldExtractor(self.model, self.directory)
-        self.baseline = BaselineCopilot(self.directory)
-
-    def process(self, thread: Thread, now: datetime) -> ThreadResult:
-        d = self.directory
-        redactor = Redactor(directory=d)
-        before = self.model.usage.model_copy()
-        inputs_before = len(self.model.inputs)
-        current: dict[str, FieldPrediction] = {}
-        changes: list[FieldChange] = []
-        raw = None
-        for index, email in enumerate(thread.messages):
-            if email.from_address == d.support_address:
-                continue
-            fields, raw = self.extractor.extract(thread, index, redactor, raw)
-            for name, prediction in fields.items():
-                if name not in current or current[name].value != prediction.value:
-                    changes.append(
-                        FieldChange(
-                            message_index=index,
-                            field=name,
-                            value=prediction.value,
-                            reason=prediction.reason,
-                        )
-                    )
-            current = fields
-
-        rules = self.baseline.process(thread, now)
-        alerts = [a for a in rules.alerts if a.kind == "chase"]
-        silence = silence_alert(thread, current["priority"].value, now, d)
-        if silence:
-            alerts.append(silence)
-        after = self.model.usage
-        return ThreadResult(
-            thread_id=thread.thread_id,
-            system=self.name,
-            fields=current,
-            field_changes=changes,
-            notes=rules.notes,
-            chase_assessments=rules.chase_assessments,
-            alerts=alerts,
-            model_inputs=self.model.inputs[inputs_before:],
-            usage=Usage(
-                provider=after.provider,
-                model=after.model,
-                prompt_version=PROMPT_NAME,
-                calls=after.calls - before.calls,
-                prompt_tokens=after.prompt_tokens - before.prompt_tokens,
-                completion_tokens=after.completion_tokens - before.completion_tokens,
-                cost_usd=after.cost_usd - before.cost_usd,
-            ),
-        )

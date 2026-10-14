@@ -79,7 +79,7 @@ A separate table scores the redactor on its own, over every email in the split, 
 
 ### Known limits
 
-- Note scores are lexical. They catch missing facts and obvious inventions cheaply, but not paraphrase. Phase 4 adds a model-graded judge alongside them.
+- The default note scores are lexical. They catch missing facts and obvious inventions cheaply, but not paraphrase. `--judge` adds model-graded completeness and faithfulness (`src/copilot/evaluation/judge.py`, one call per thread per system, on redacted text), with the judge's cost reported separately. The judge is a model too, so treat its numbers as a second opinion, not ground truth.
 - Escalation is the only labelled check-in event for now. Engineers would also want fields corrected when a missing detail arrives; those changes count against precision until they are labelled.
 - Response targets are wall-clock minutes.
 - The committed data is template-rendered, so wording is more regular than real email. Expect lower scores on model-rendered data.
@@ -88,7 +88,7 @@ A separate table scores the redactor on its own, over every email in the split, 
 
 `src/copilot/extraction.py` registers as `copilot`. It needs a model, so the harness only runs it when `LLM_API_KEY` (or `LLM_API_BASE` for a local model) is set; otherwise it prints that only the baseline ran. Asking for it with `--system copilot` and no model exits with an error rather than silently skipping it. A run is limited by `SPEND_CAP_USD` and `RATE_LIMIT_PER_MINUTE`; hitting the cap stops the run and marks it as failed.
 
-In Phase 3 the copilot's fields and check-in updates come from the model, one call per inbound email. Its notes, chase detection and chase alerts are still the baseline's until Phases 4 and 5, so those rows match the baseline; its silence alert uses its own priority.
+For each inbound email the copilot makes two calls: one for the fields and one for the note (`src/copilot/notes.py`). Every note item must quote the client's email, and items whose quote is not in the emails are dropped. Open questions come from the desk's triage checklist for the ticket's subcategory (`src/copilot/knowledge/triage.yaml`). Chase detection and chase alerts are still the baseline's until Phase 5, so those rows match the baseline; its silence alert uses its own priority.
 
 ## The baseline
 

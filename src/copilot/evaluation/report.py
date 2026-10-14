@@ -83,8 +83,8 @@ def markdown(split: str, runs: list[SystemRun], count: int, redaction: dict | No
             lines.append(f"| {label} | {shown or _fmt(key, value)} |")
         lines.append("")
     lines.append(
-        "Note scores are lexical proxies (word overlap with the labels and the emails) until "
-        "the model-graded judge arrives in Phase 4."
+        "Note scores are lexical proxies (word overlap with the labels and the emails), "
+        "except the judge rows, which a model grades when the harness runs with --judge."
     )
     for run in runs:
         if run.errors:
