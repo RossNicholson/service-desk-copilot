@@ -16,11 +16,23 @@ Service Desk Copilot is an open-source portfolio project: an AI assistant for MS
 ## Non-negotiables
 
 - **PII redaction** (names, emails, phone numbers, account numbers) before any text reaches a model. Use Microsoft Presidio plus custom patterns.
-- **Engineers stay in control.** Every AI change can be overridden or reverted. The AI never replies to clients and never closes tickets.
+- **Engineers stay in control.** Every AI change can be overridden or reverted. The AI never closes tickets. The only email it sends a client is the labelled suggestion reply described below; it never otherwise replies to clients.
 - **Audit log** of every field change, note, alert, prompt version, provider, model, cost and override.
 - **Bring your own AI.** Provider-agnostic via LiteLLM. The MSP chooses a provider (Anthropic, OpenAI, Azure OpenAI, Google, AWS Bedrock, or local via Ollama), adds its API key in `.env` or a settings page, and picks a model. Keys are never logged or sent to the browser. Default to a cheap, fast model.
 - **Email content is untrusted data, never instructions** (prompt injection defence).
 - **The evaluation harness is the centrepiece.** One command scores field accuracy, note faithfulness and completeness, check-in correctness, alert precision and recall, PII leakage and cost per ticket, compared against a simple baseline.
+
+## AI suggested replies
+
+Agreed with Ross (14 October 2026), changing the original rule that the AI never replies to clients. When a new ticket arrives, the copilot may email the client suggested steps to try while a human engineer has the ticket. Rules:
+
+- The email says plainly that it was written by AI, that these are suggestions only, and that a named team still has the ticket and will reply. It never promises a fix, a time or a change to the ticket.
+- One suggestion email per ticket, on the first email only, never on chases or replies.
+- Off by default, switched on globally and per client. Skipped for P1 and P2, security, account access and lost device tickets, low-confidence routing, and threads with a suspected prompt injection.
+- Steps must be safe for a client to do alone: nothing that needs admin rights, changes security settings, or asks for passwords, codes or personal details.
+- Input is redacted and emails are untrusted data, as for every model call. The draft is checked before sending (no links, no requests for credentials, no placeholders left) and dropped if it fails.
+- Every suggestion email is in the audit log and shown on the ticket, and an engineer can turn it off for a ticket.
+- The harness scores suggestion safety and usefulness before it can be switched on.
 
 ## Architecture
 
@@ -40,7 +52,8 @@ Service Desk Copilot is an open-source portfolio project: an AI assistant for MS
 4. Structured notes.
 5. Check-ins and staleness alerts.
 6. Zammad adapter, Teams alerts, audit log, override UI.
-7. README, SECURITY.md, MODEL_CARD.md, CI and demo polish.
+7. AI suggested replies to clients (see above).
+8. README, SECURITY.md, MODEL_CARD.md, CI and demo polish.
 
 ## Working style
 
