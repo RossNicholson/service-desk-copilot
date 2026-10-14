@@ -133,6 +133,10 @@ services:
       ZAMMAD_URL: http://zammad-nginx:8080
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
+    volumes:
+      # The evaluation screen and the suggestion email gate read the latest
+      # harness reports from `uv run python -m copilot.evaluation`.
+      - ./reports:/app/reports:ro
     ports:
       - "127.0.0.1:${COPILOT_PORT:-8000}:8000"
     depends_on:

@@ -22,8 +22,8 @@ COPY datagen ./datagen
 COPY scripts ./scripts
 # The demo screens read the dev split. The held-out test split stays out of the image.
 COPY data/dev ./data/dev
-COPY reports ./reports
-RUN uv sync --locked --no-dev && chown -R copilot /app/reports
+# Harness reports are not in git; compose mounts the host's reports/ here.
+RUN uv sync --locked --no-dev && mkdir -p /app/reports
 
 USER copilot
 EXPOSE 8000
