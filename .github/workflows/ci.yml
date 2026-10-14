@@ -22,6 +22,8 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run python -m datagen.validate
       - run: uv run pytest
+      - name: Evaluation harness (held-out test split)
+        run: uv run python -m copilot.evaluation --split test
 
   compose:
     name: Docker compose smoke test

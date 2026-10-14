@@ -65,7 +65,8 @@ The repository is public, so generated data must be verifiably fictional:
 
 - `data/dev/` is for building and tuning prompts, heuristics and code.
 - `data/test/` is held out for scoring only. **Never read, inspect or tune against `data/test/`** outside the evaluation harness. A test (`tests/test_data_isolation.py`) fails if code under `src/` references it.
-- Each thread's scenario spec is its ground truth label set.
+- Each thread's scenario spec is its ground truth label set. The format is in `src/copilot/evaluation/dataset.py`; bump `LABEL_FORMAT` when it changes incompatibly.
+- Every system implements `process(thread, now) -> ThreadResult` (`src/copilot/schemas.py`) and is registered in `src/copilot/evaluation/harness.py`. Report changes as harness numbers against the baseline. See `docs/evaluation.md`.
 
 ## Commands
 
@@ -74,6 +75,8 @@ uv sync                                        # install dependencies
 uv run pytest                                  # tests (compose tests excluded)
 uv run pytest -m compose                       # tests needing the running stack
 uv run ruff check . && uv run ruff format --check .
+uv run python -m copilot.evaluation            # score every system on the dev split
+uv run python -m copilot.evaluation --split test   # held-out scores (harness only)
 uv run python -m datagen.generate --help       # synthetic data generator
 docker compose up -d --wait                    # Postgres, Zammad, Mailpit
 uv run python scripts/bootstrap_zammad.py      # first run only: admin, email channel, token
