@@ -96,6 +96,21 @@ NOT_NAME_PHRASES = [
 ]
 
 
+# Mailbox names that belong to a function, not a person. Kept so an engineer can see,
+# for example, who a phishing email claimed to be from.
+ROLE_MAILBOXES = re.compile(
+    r"^(?:billing|invoices?|accounts|payments|noreply|no-reply|donotreply|info|admin|"
+    r"support|helpdesk|security|alerts?|notifications?|service|hello|enquiries)@",
+    re.I,
+)
+
+
+def _role_address(address: str, directory: Directory) -> bool:
+    if address.lower() == directory.support_address.lower():
+        return True
+    return bool(ROLE_MAILBOXES.match(address))
+
+
 def _words(text: str) -> list[str]:
     return re.findall(r"[a-z][a-z'-]*", text.lower())
 
@@ -161,6 +176,8 @@ class Redactor:
                 words = _words(match.group(group))
                 if entity == "PERSON" and all(w in self._not_names for w in words):
                     continue  # "Customer Support Lead" is a job title, not a customer
+                if entity == "EMAIL" and _role_address(match.group(0), self.directory):
+                    continue  # "billing@..." in a phishing report is evidence, not a person
                 spans.append(Span(match.start(group), match.end(group), entity))
         if self._known_names:
             for match in self._known_names.finditer(text):

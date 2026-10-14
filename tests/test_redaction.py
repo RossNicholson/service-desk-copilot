@@ -60,6 +60,13 @@ def test_name_cues_catch_unknown_people(directory):
         assert name not in out
 
 
+def test_role_mailboxes_are_kept_as_evidence(directory):
+    r = redactor(directory, presidio=False)
+    out = r.redact("It came from billing@account-verify-centre.example, cc jo.bloggs@mail.example")
+    assert "billing@account-verify-centre.example" in out
+    assert "jo.bloggs" not in out
+
+
 def test_job_titles_and_services_survive(directory):
     client = directory.clients[0]
     r = redactor(directory)
