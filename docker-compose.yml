@@ -1,4 +1,4 @@
-# Local stack for Service Desk Copilot: Postgres, Zammad and Mailpit.
+# Local stack for Service Desk Copilot: the copilot, Postgres, Zammad and Mailpit.
 #
 # Based on Zammad's official layout (github.com/zammad/zammad-docker-compose),
 # trimmed for a small VPS: Elasticsearch is optional (`--profile search`) and
@@ -116,6 +116,28 @@ services:
       - "127.0.0.1:${ZAMMAD_PORT:-8080}:8080"
     depends_on:
       zammad-railsserver:
+        condition: service_healthy
+
+  # The copilot itself. With COPILOT_SOURCE=demo (the default) it shows the
+  # synthetic dev threads; with COPILOT_SOURCE=zammad it works on Zammad.
+  copilot:
+    build: .
+    image: service-desk-copilot:local
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://copilot:${COPILOT_DB_PASSWORD}@postgres:5432/copilot
+      ZAMMAD_URL: http://zammad-nginx:8080
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+    ports:
+      - "127.0.0.1:${COPILOT_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
 
   mailpit:

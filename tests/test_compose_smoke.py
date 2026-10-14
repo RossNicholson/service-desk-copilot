@@ -59,3 +59,12 @@ def test_email_to_mailpit_becomes_a_zammad_ticket():
             return
         time.sleep(5)
     pytest.fail(f"No Zammad ticket titled {subject!r} appeared within 180 seconds")
+
+
+def test_the_copilot_screens_answer():
+    port = ENV.get("COPILOT_PORT", "8000")
+    with urllib.request.urlopen(f"http://localhost:{port}/", timeout=10) as resp:
+        assert "Service Desk Copilot" in resp.read().decode()
+    with urllib.request.urlopen(f"http://localhost:{port}/api/settings", timeout=10) as resp:
+        settings = json.loads(resp.read())
+    assert "api_key_set" in settings and "api_key" not in settings
