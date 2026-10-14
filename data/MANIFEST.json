@@ -75,5 +75,6 @@
     "datagen/scenarios/mix.yaml": "56ebbeea65828b49",
     "datagen/world/issues.yaml": "affae831612f0756",
     "datagen/world/northgate.yaml": "1a29f67e2a10a114"
-  }
+  },
+  "label_format": "1"
 }
