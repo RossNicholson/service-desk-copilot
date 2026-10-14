@@ -15,6 +15,7 @@ Run once after `docker compose up -d --wait`:
 
 from __future__ import annotations
 
+import argparse
 import base64
 import json
 import os
@@ -159,6 +160,13 @@ def wait_for_zammad(zammad: Zammad, timeout: int = 300) -> dict:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Configure a fresh Zammad from .env.")
+    parser.add_argument(
+        "--no-token",
+        action="store_true",
+        help="Do not create an API token (for CI, where logs are public).",
+    )
+    args = parser.parse_args()
     env = load_env(ROOT / ".env")
     for key in ("ZAMMAD_ADMIN_EMAIL", "ZAMMAD_ADMIN_PASSWORD", "MAILPIT_POP3_PASSWORD"):
         if not env.get(key):
@@ -187,6 +195,8 @@ def main() -> None:
                 admin.request("PUT", f"/api/v1/settings/{setting['id']}", {"state_current": value})
                 print("Enabled follow-up detection by email references")
 
+    if args.no_token:
+        return
     if env.get("ZAMMAD_TOKEN"):
         print("ZAMMAD_TOKEN is already set; not creating another token.")
         return

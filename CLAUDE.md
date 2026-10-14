@@ -76,5 +76,6 @@ uv run pytest -m compose                       # tests needing the running stack
 uv run ruff check . && uv run ruff format --check .
 uv run python -m datagen.generate --help       # synthetic data generator
 docker compose up -d --wait                    # Postgres, Zammad, Mailpit
+uv run python scripts/bootstrap_zammad.py      # first run only: admin, email channel, token
 uv run python scripts/seed_mailpit.py          # replay dev threads into Mailpit
 ```

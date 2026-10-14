@@ -17,6 +17,12 @@ uv run pytest                 # unit and dataset tests
 uv run pytest -m compose      # smoke tests against the running stack
 ```
 
+To load the synthetic client emails into Zammad as tickets:
+
+```bash
+uv run python scripts/seed_mailpit.py --limit 20   # or no --limit for all 200 dev threads
+```
+
 Mail sent to `support@northgate-ms.example` through Mailpit's SMTP port (1025) is collected by Zammad over POP3 and becomes a ticket. Zammad's automatic replies to customers are switched off.
 
 - Zammad: http://localhost:8080
@@ -25,6 +31,10 @@ Mail sent to `support@northgate-ms.example` through Mailpit's SMTP port (1025) i
 ## Synthetic data
 
 See [`datagen/README.md`](datagen/README.md) for how the email threads in `data/` are generated, and how to regenerate them with your own AI provider.
+
+## Continuous integration
+
+GitHub Actions runs linting, the data validator and the tests on every push and pull request, plus a job that brings up the compose stack and checks that an email becomes a Zammad ticket.
 
 ## Licence
 
