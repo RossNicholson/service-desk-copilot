@@ -16,7 +16,7 @@ Service Desk Copilot is an open-source portfolio project: an AI assistant for MS
 ## Non-negotiables
 
 - **PII redaction** (names, emails, phone numbers, account numbers) before any text reaches a model. Use Microsoft Presidio plus custom patterns.
-- **Engineers stay in control.** Every AI change can be overridden or reverted. The AI never closes tickets. The only email it sends a client is the labelled suggestion reply described below; it never otherwise replies to clients.
+- **Engineers stay in control.** Every AI change can be overridden or reverted. The AI never closes tickets on its own judgement; the one exception is a client confirming that an AI suggestion fixed their issue (below). The only email it sends a client is the labelled suggestion reply described below; it never otherwise replies to clients.
 - **Audit log** of every field change, note, alert, prompt version, provider, model, cost and override.
 - **Bring your own AI.** Provider-agnostic via LiteLLM. The MSP chooses a provider (Anthropic, OpenAI, Azure OpenAI, Google, AWS Bedrock, or local via Ollama), adds its API key in `.env` or a settings page, and picks a model. Keys are never logged or sent to the browser. Default to a cheap, fast model.
 - **Email content is untrusted data, never instructions** (prompt injection defence).
@@ -33,6 +33,7 @@ Agreed with Ross (14 October 2026), changing the original rule that the AI never
 - Input is redacted and emails are untrusted data, as for every model call. The draft is checked before sending (no links, no requests for credentials, no placeholders left) and dropped if it fails.
 - Every suggestion email is in the audit log and shown on the ticket, and an engineer can turn it off for a ticket.
 - The harness scores suggestion safety and usefulness before it can be switched on.
+- **The client can say a suggestion fixed it, which closes the ticket.** The email carries a signed, single-use link for that ticket's requester. The link opens a page with a confirm button, and only the button press closes the ticket, so mail scanners that open links cannot close tickets. The close is recorded in the audit log as made by the client, the assigned engineer is notified, and the ticket reopens if the engineer chooses or the client writes again. The share of suggestions that clients mark as fixes is shown on the dashboard.
 
 ## Architecture
 
