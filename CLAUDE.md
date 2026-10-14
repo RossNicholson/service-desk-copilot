@@ -43,7 +43,8 @@ Agreed with Ross (14 October 2026), changing the original rule that the AI never
 - APScheduler for check-ins and staleness checks.
 - Everything runs with a single `docker compose up`.
 - GitHub Actions runs tests and the evaluation harness on every commit.
-- The live demo runs on a small VPS behind a Cloudflare Tunnel, so all config is environment-driven (`src/copilot/config.py`), with rate limiting and a spending cap setting.
+- The live demo runs on a small VPS (the app, Postgres and Zammad) behind a Cloudflare Tunnel, with Cloudflare Access in front of the admin pages, so all config is environment-driven (`src/copilot/config.py`), with rate limiting and a spending cap setting.
+- Ross believes his Cloudflare account is on Workers Paid (to confirm under Manage Account, Billing). If so, the demo can send the AI suggestion replies (Phase 7) to real recipients through Cloudflare's outbound email sending; otherwise outbound mail stays in Mailpit. Keep email sending behind a setting either way.
 
 ## Phases
 
