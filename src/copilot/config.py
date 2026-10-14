@@ -8,6 +8,7 @@ client library.
 """
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -45,6 +46,15 @@ class Settings(BaseSettings):
     zammad_url: str = "http://localhost:8080"
     zammad_token: SecretStr | None = None
     zammad_group: str = "Users"
+    # Where the screens get tickets: "demo" shows the synthetic dev threads,
+    # "zammad" works on the live Zammad and runs the scheduled check-ins.
+    copilot_source: Literal["demo", "zammad"] = "demo"
+
+    # Alerts. The webhook URL lets anyone post to the channel, so it is a secret.
+    teams_webhook_url: SecretStr | None = None
+    # The copilot's own address, for "Open ticket" links in alerts.
+    public_url: str | None = None
+
     smtp_host: str = "localhost"
     smtp_port: int = 1025
 
